@@ -104,7 +104,7 @@ const Settings = (() => {
 
     /**
      * Send a prompt to the configured AI provider and return the text response.
-     * Returns null on error (caller should fall back to built-in catalog).
+     * Returns null on error.
      */
     async function callAI(systemPrompt, userPrompt) {
         const config = getProviderConfig();
@@ -154,6 +154,106 @@ const Settings = (() => {
             console.error('AI API call failed:', e);
             return null;
         }
+    }
+
+    /**
+     * Send a multi-turn conversation to the AI.
+     * messages: array of { role: 'user'|'assistant', content: string }
+     * Returns the assistant's response text, or null on error.
+     */
+    async function callAIConversation(systemPrompt, messages) {
+        const config = getProviderConfig();
+        if (!config) return null;
+
+        try {
+            let body, extractText;
+
+            if (config.provider === 'claude') {
+                body = JSON.stringify({
+                    model: config.model,
+                    max_tokens: 8192,
+                    system: systemPrompt,
+                    messages: messages,
+                });
+                extractText = (data) => data.content?.[0]?.text || null;
+            } else {
+                body = JSON.stringify({
+                    model: config.model,
+                    max_tokens: 8192,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...messages,
+                    ],
+                });
+                extractText = (data) => data.choices?.[0]?.message?.content || null;
+            }
+
+            const resp = await fetch(config.url, {
+                method: 'POST',
+                headers: config.headers,
+                body,
+            });
+
+            if (!resp.ok) {
+                const errText = await resp.text();
+                console.error('AI API error:', resp.status, errText);
+                return null;
+            }
+
+            const data = await resp.json();
+            return extractText(data);
+
+        } catch (e) {
+            console.error('AI conversation call failed:', e);
+            return null;
+        }
+    }
+
+    // ---- Conversation system prompt ----
+    function getDesignConversationSystemPrompt() {
+        const refContext = buildReferenceContext();
+        const settings = get();
+        const domains = Catalog.getDomains();
+        const domainList = domains.map(d =>
+            `- ${d.name}: ${d.skills.map(s => s.name).join(', ')}`
+        ).join('\n');
+
+        return `You are an expert learning program designer for hands-on cloud technology labs. Your job is to have a conversation with a program manager to understand their training needs and design a lab program.
+
+CONVERSATION GUIDELINES:
+1. Start by acknowledging their initial description and asking 2-3 targeted clarifying questions.
+2. Ask about: specific technologies/services, audience current skill level, certification alignment, time constraints, specific scenarios or use cases they want covered, whether they need assessment/scoring.
+3. Keep responses concise (3-5 sentences max per message, plus questions).
+4. After 2-3 exchanges (when you have enough detail), present a DESIGN SUMMARY.
+5. Do NOT ask more than 3 questions at once.
+6. Be specific in your questions — don't ask vague open-ended questions.
+
+WHEN YOU HAVE ENOUGH INFORMATION, output a design summary in this exact format (the system parses this):
+
+===DESIGN_SUMMARY===
+{
+  "programName": "Short program name",
+  "description": "One paragraph summary of the program",
+  "platform": "azure|aws|gcp|multi",
+  "audienceSize": 100,
+  "audienceLevel": "beginner|intermediate|advanced|mixed",
+  "skills": ["Exact Skill Name 1", "Exact Skill Name 2"],
+  "topics": ["Additional topic 1", "Additional topic 2"],
+  "notes": "Any special considerations"
+}
+===END_SUMMARY===
+
+Available skill domains and skills you can recommend:
+${domainList}
+
+Use the exact skill names from the list above in the "skills" array. The "topics" array can include additional specific topics not in the list.
+
+${refContext ? `\nThe user has attached reference materials that should inform your recommendations:\n${refContext}` : ''}
+
+Target lab duration: ${settings.targetLabDuration || 45} minutes per lab.
+Lab density preference: ${settings.labDensity || 'moderate'} (light = fewer longer labs, moderate = balanced, heavy = many shorter labs).
+
+Remember: Be conversational and helpful. Guide the user to a clear, specific program design. Do NOT output the design summary until you have enough information.`;
     }
 
     /**
@@ -331,6 +431,8 @@ Return the JSON array of lab outlines.`;
         isAIConfigured,
         testConnection,
         callAI,
+        callAIConversation,
+        getDesignConversationSystemPrompt,
         getReferences,
         addReference,
         removeReference,

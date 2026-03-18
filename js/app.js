@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (viewId === 'courses') renderCourses();
         else if (viewId === 'labs') renderLabs();
         else if (viewId === 'skills') renderSkills();
-        else if (viewId === 'program-builder') setWizardStep(wizardState.currentStep);
+        else if (viewId === 'program-builder') { checkAIGate(); if (Settings.isAIConfigured()) { if (wizardState.chatMessages.length === 0) initChat(); setWizardStep(wizardState.currentStep); } }
         else if (viewId === 'settings') renderSettings();
     }
 
@@ -740,9 +740,12 @@ document.addEventListener('DOMContentLoaded', () => {
         audienceSize: 20,
         audienceLevel: 'beginner',
         platform: 'azure',
-        selectedSkills: [],     // array of skill name strings
-        labOutlines: [],        // generated outlines from Catalog
+        selectedSkills: [],
+        labOutlines: [],
         currentStep: 1,
+        chatMessages: [],       // { role: 'user'|'assistant', content: string }
+        designSummary: null,    // parsed from AI conversation
+        chatBusy: false,
     };
 
     function setWizardStep(step) {
@@ -758,68 +761,187 @@ document.addEventListener('DOMContentLoaded', () => {
         if (panel) panel.classList.add('active');
     }
 
-    // Step 1: Analyze
-    document.getElementById('wizard-analyze').addEventListener('click', async () => {
-        const desc = document.getElementById('wizard-description').value.trim();
-        if (!desc) { alert('Please describe your program.'); return; }
-        wizardState.description = desc;
-        wizardState.audienceSize = parseInt(document.getElementById('wizard-audience-size').value) || 20;
-        wizardState.audienceLevel = document.getElementById('wizard-audience-level').value;
-        const platformPref = document.getElementById('wizard-platform').value;
+    // ---- AI Gate: check on view load ----
+    function checkAIGate() {
+        const gate = document.getElementById('wizard-ai-gate');
+        const stepsBar = document.getElementById('wizard-steps-bar');
+        const step1 = document.getElementById('wizard-step-1');
+        if (Settings.isAIConfigured()) {
+            gate.style.display = 'none';
+            stepsBar.style.display = '';
+            step1.style.display = '';
+        } else {
+            gate.style.display = '';
+            stepsBar.style.display = 'none';
+            step1.style.display = 'none';
+        }
+    }
 
-        // Show loading if AI is configured
-        const useAI = Settings.isAIConfigured();
-        const grid = document.getElementById('wizard-skills-grid');
+    document.getElementById('wizard-goto-settings').addEventListener('click', () => {
+        showView('settings');
+    });
 
-        let analysis;
-        if (useAI) {
-            grid.innerHTML = '<div class="wizard-loading"><div class="spinner"></div><p>AI is analyzing your program description...</p></div>';
-            setWizardStep(2);
+    // ---- Chat Conversation (Step 1) ----
+    function addChatBubble(role, text) {
+        const container = document.getElementById('chat-messages');
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble ' + role;
+        if (role === 'assistant') {
+            bubble.innerHTML = '<span class="chat-label">Lab Designer AI</span>' + escHtml(text);
+        } else if (role === 'user') {
+            bubble.textContent = text;
+        } else {
+            bubble.textContent = text;
+        }
+        container.appendChild(bubble);
+        container.scrollTop = container.scrollHeight;
+    }
 
-            const aiResult = await Settings.aiAnalyzeProgram(desc, platformPref);
-            if (aiResult) {
-                analysis = aiResult;
-                wizardState.platform = (platformPref === 'auto') ? (aiResult.platform || 'azure') : platformPref;
-                wizardState.usedAI = true;
-            } else {
-                // Fall back to built-in
-                analysis = Catalog.analyzeProgram(desc);
-                wizardState.platform = (platformPref === 'auto') ? analysis.platform : platformPref;
-                wizardState.usedAI = false;
+    function showTyping(show) {
+        document.getElementById('chat-typing').style.display = show ? '' : 'none';
+        if (show) {
+            const container = document.getElementById('chat-messages');
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
+    function setChatBusy(busy) {
+        wizardState.chatBusy = busy;
+        document.getElementById('chat-send').disabled = busy;
+        document.getElementById('chat-input').disabled = busy;
+    }
+
+    function initChat() {
+        wizardState.chatMessages = [];
+        wizardState.designSummary = null;
+        document.getElementById('chat-messages').innerHTML = '';
+        document.getElementById('wizard-step1-actions').style.display = 'none';
+        document.getElementById('chat-input').value = '';
+        setChatBusy(false);
+
+        // Add welcome message
+        addChatBubble('assistant',
+            'Welcome to the Lab Program Builder! Tell me about the training program you want to create.\n\n' +
+            'For example: "I need to train 100 IT administrators on deploying and securing resources in Azure" or ' +
+            '"Build a Kubernetes bootcamp for developers moving to containerized applications."\n\n' +
+            'What program would you like to build?'
+        );
+        document.getElementById('chat-input').focus();
+    }
+
+    async function sendChatMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text || wizardState.chatBusy) return;
+
+        // Add user message
+        addChatBubble('user', text);
+        wizardState.chatMessages.push({ role: 'user', content: text });
+        input.value = '';
+
+        // Call AI
+        setChatBusy(true);
+        showTyping(true);
+
+        const systemPrompt = Settings.getDesignConversationSystemPrompt();
+        const response = await Settings.callAIConversation(systemPrompt, wizardState.chatMessages);
+
+        showTyping(false);
+        setChatBusy(false);
+
+        if (!response) {
+            addChatBubble('system', 'Failed to get AI response. Check your API key in Settings.');
+            return;
+        }
+
+        // Check if the response contains a design summary
+        const summaryMatch = response.match(/===DESIGN_SUMMARY===([\s\S]*?)===END_SUMMARY===/);
+        if (summaryMatch) {
+            // Parse the summary
+            try {
+                const summaryJson = summaryMatch[1].trim();
+                const jsonMatch = summaryJson.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    wizardState.designSummary = JSON.parse(jsonMatch[0]);
+                }
+            } catch (e) {
+                console.error('Failed to parse design summary:', e);
+            }
+
+            // Show the text before the summary marker
+            const textBefore = response.split('===DESIGN_SUMMARY===')[0].trim();
+            if (textBefore) {
+                addChatBubble('assistant', textBefore);
+                wizardState.chatMessages.push({ role: 'assistant', content: textBefore });
+            }
+
+            // Show design summary card
+            if (wizardState.designSummary) {
+                const ds = wizardState.designSummary;
+                wizardState.description = ds.description || '';
+                wizardState.platform = ds.platform || 'azure';
+                wizardState.audienceSize = ds.audienceSize || 20;
+                wizardState.audienceLevel = ds.audienceLevel || 'beginner';
+
+                const container = document.getElementById('chat-messages');
+                const card = document.createElement('div');
+                card.className = 'design-summary-card';
+                card.innerHTML = `
+                    <h4>Program Design Summary</h4>
+                    <div class="summary-field"><strong>Program</strong><span>${escHtml(ds.programName || '')}</span></div>
+                    <div class="summary-field"><strong>Description</strong><span>${escHtml(ds.description || '')}</span></div>
+                    <div class="summary-field"><strong>Platform</strong><span>${escHtml(ds.platform || 'auto')}</span></div>
+                    <div class="summary-field"><strong>Audience</strong><span>${ds.audienceSize || '?'} learners, ${escHtml(ds.audienceLevel || 'beginner')} level</span></div>
+                    <div class="summary-field"><strong>Recommended Skills</strong><span>${(ds.skills || []).map(s => escHtml(s)).join(', ')}</span></div>
+                    ${ds.topics && ds.topics.length ? `<div class="summary-field"><strong>Additional Topics</strong><span>${ds.topics.map(t => escHtml(t)).join(', ')}</span></div>` : ''}
+                    ${ds.notes ? `<div class="summary-field"><strong>Notes</strong><span>${escHtml(ds.notes)}</span></div>` : ''}
+                `;
+                container.appendChild(card);
+                container.scrollTop = container.scrollHeight;
+
+                // Show accept button
+                document.getElementById('wizard-step1-actions').style.display = '';
             }
         } else {
-            analysis = Catalog.analyzeProgram(desc);
-            wizardState.platform = (platformPref === 'auto') ? analysis.platform : platformPref;
-            wizardState.usedAI = false;
+            // Normal conversation message
+            addChatBubble('assistant', response);
+            wizardState.chatMessages.push({ role: 'assistant', content: response });
         }
 
-        // Build skills grid grouped by domain
+        input.focus();
+    }
+
+    document.getElementById('chat-send').addEventListener('click', sendChatMessage);
+    document.getElementById('chat-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+
+    document.getElementById('wizard-restart-chat').addEventListener('click', () => {
+        initChat();
+    });
+
+    // Accept design → populate Step 2 skills grid
+    document.getElementById('wizard-accept-design').addEventListener('click', () => {
+        const ds = wizardState.designSummary;
+        if (!ds) return;
+
         const allDomains = Catalog.getDomains();
+        const grid = document.getElementById('wizard-skills-grid');
         grid.innerHTML = '';
 
-        // Show AI badge if used
-        if (wizardState.usedAI) {
-            const badge = document.createElement('div');
-            badge.innerHTML = '<span class="wizard-ai-badge">AI-Enhanced</span> Skills suggested by AI provider';
-            badge.style.cssText = 'margin-bottom:12px;font-size:0.8rem;color:var(--color-text-light);';
-            grid.appendChild(badge);
-        }
+        // AI badge
+        const badge = document.createElement('div');
+        badge.innerHTML = '<span class="wizard-ai-badge">AI-Designed</span> Skills recommended through conversation';
+        badge.style.cssText = 'margin-bottom:12px;font-size:0.8rem;color:var(--color-text-light);';
+        grid.appendChild(badge);
 
-        // Show reference material chips
-        const refs = Settings.getReferences();
-        if (refs.length > 0) {
-            const chipRow = document.createElement('div');
-            chipRow.className = 'wizard-ref-chips';
-            refs.forEach(ref => {
-                chipRow.innerHTML += `<span class="wizard-ref-chip">${escHtml(ref.title)}</span>`;
-            });
-            grid.appendChild(chipRow);
-        }
+        // Build the skills grid, pre-selecting AI-recommended skills
+        const recommendedSkills = ds.skills || [];
 
         allDomains.forEach(domain => {
-            const matchedDomain = analysis.skillsByDomain[domain.id];
-            const matchedNames = matchedDomain ? matchedDomain.skills : [];
-
             const group = document.createElement('div');
             group.className = 'wizard-domain-group';
             group.innerHTML = `<div class="wizard-domain-title">${escHtml(domain.name)}</div>`;
@@ -828,7 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
             skillsRow.className = 'wizard-domain-skills';
 
             domain.skills.forEach(skill => {
-                const isSelected = matchedNames.includes(skill.name);
+                const isSelected = recommendedSkills.includes(skill.name);
                 const tag = document.createElement('span');
                 tag.className = 'wizard-skill-tag' + (isSelected ? ' selected' : '');
                 tag.textContent = skill.name;
@@ -841,7 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
             grid.appendChild(group);
         });
 
-        if (!useAI) setWizardStep(2);
+        setWizardStep(2);
     });
 
     // Step 2: Generate outlines
