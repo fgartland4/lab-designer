@@ -449,6 +449,71 @@ Return ONLY the JSON array.`;
         return null;
     }
 
+    /**
+     * Use AI to generate a PowerShell environment build script based on the
+     * unified environment (VMs + cloud resources) from the lab outlines.
+     * Returns a PowerShell script string, or null on failure.
+     */
+    async function aiGenerateBuildScript(unifiedEnv, designContext) {
+        const platform = unifiedEnv.platform || 'azure';
+        const vms = unifiedEnv.vms || [];
+        const resources = unifiedEnv.cloudResources || [];
+
+        const vmList = vms.map(vm => `- ${vm.name} (${vm.os})`).join('\n');
+        const resList = resources.map(r => `- ${r.type}: ${r.name}`).join('\n');
+
+        const systemPrompt = `You are a cloud infrastructure automation expert. Generate a PowerShell script that provisions the lab environment described below.
+
+The script will run as a Skillable LifeCycleAction at lab start (Event=10). It must:
+1. Authenticate to the cloud platform using lab credentials
+2. Create all required cloud resources
+3. Output status messages with Write-Host using -ForegroundColor
+4. Use proper error handling ($ErrorActionPreference = "Stop")
+5. Accept parameters: $LabInstanceId and $ResourceGroupName
+
+For Azure: use Az PowerShell module commands (New-AzResourceGroup, New-AzStorageAccount, etc.)
+For AWS: use AWS PowerShell module commands
+For GCP: use gcloud CLI or GCP PowerShell module
+
+Use Skillable replacement tokens for credentials:
+- @lab.CloudPortalCredential(User1).Username
+- @lab.CloudPortalCredential(User1).Password
+- @lab.CloudSubscription.TenantId
+
+Generate REAL, working PowerShell commands for each resource — not placeholders or TODOs.
+If a resource type doesn't have a direct PowerShell cmdlet, use az CLI commands wrapped in Invoke-Expression or REST API calls.
+
+Return ONLY the PowerShell script — no markdown fences, no explanation.`;
+
+        let designBlock = '';
+        if (designContext) {
+            designBlock = `\nProgram: ${designContext.programName || 'Lab Program'}\nDescription: ${designContext.description || 'N/A'}`;
+        }
+
+        const userPrompt = `Generate a PowerShell build script for this environment:
+
+Platform: ${platform}
+${designBlock}
+
+Virtual Machines:
+${vmList || '(none)'}
+
+Cloud Resources:
+${resList || '(none)'}
+
+Credentials: ${unifiedEnv.credentials || 'Standard lab credentials'}
+
+Return ONLY the PowerShell script.`;
+
+        const response = await callAI(systemPrompt, userPrompt);
+        if (!response) return null;
+
+        // Strip markdown fences if present
+        let script = response.trim();
+        script = script.replace(/^```(?:powershell|ps1)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+        return script;
+    }
+
     return {
         get,
         update,
@@ -462,5 +527,6 @@ Return ONLY the JSON array.`;
         removeReference,
         aiAnalyzeProgram,
         aiGenerateOutlines,
+        aiGenerateBuildScript,
     };
 })();

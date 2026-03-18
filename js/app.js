@@ -1112,14 +1112,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Step 3: Go to summary
     document.getElementById('wizard-back-2').addEventListener('click', () => setWizardStep(2));
-    document.getElementById('wizard-go-generate').addEventListener('click', () => {
+    document.getElementById('wizard-go-generate').addEventListener('click', async () => {
         const enabledLabs = wizardState.labOutlines.filter(o => o.enabled);
         if (enabledLabs.length === 0) { alert('Enable at least one lab.'); return; }
-        renderWizardSummary();
+
+        // Show loading while generating build script
+        document.getElementById('wizard-summary').innerHTML = '<div class="wizard-loading"><div class="spinner"></div><p>Generating unified environment and build script...</p></div>';
         setWizardStep(4);
+
+        await renderWizardSummary();
     });
 
-    function renderWizardSummary() {
+    async function renderWizardSummary() {
         const enabledLabs = wizardState.labOutlines.filter(o => o.enabled);
         const totalDuration = enabledLabs.reduce((s, l) => s + l.duration, 0);
         const uniqueSkills = [...new Set(enabledLabs.map(l => l.skillName))];
@@ -1127,18 +1131,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const mins = totalDuration % 60;
         const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 
-        // Build unified environment
+        // Build unified environment from AI-generated outlines
         const unifiedEnv = Catalog.buildUnifiedEnvironment(enabledLabs, wizardState.platform);
         wizardState.unifiedEnv = unifiedEnv;
 
-        // Generate build script
-        const buildScript = Catalog.generateBuildScript(unifiedEnv);
+        // Generate build script using AI (understands the actual resources)
+        let buildScript = await Settings.aiGenerateBuildScript(unifiedEnv, wizardState.designSummary);
+        if (!buildScript) {
+            // Fall back to catalog generator if AI fails
+            buildScript = Catalog.generateBuildScript(unifiedEnv);
+        }
         wizardState.buildScript = buildScript;
 
-        // Auto-generate a course name from description
-        const courseName = wizardState.description.length > 60
-            ? wizardState.description.slice(0, 60) + '...'
-            : wizardState.description;
+        // Auto-generate a course name from design summary
+        const courseName = (wizardState.designSummary && wizardState.designSummary.programName)
+            ? wizardState.designSummary.programName
+            : (wizardState.description.length > 60
+                ? wizardState.description.slice(0, 60) + '...'
+                : wizardState.description);
 
         const labListHTML = enabledLabs.map(l =>
             `<li><span>${escHtml(l.title)}</span><span>${l.duration} min</span></li>`
