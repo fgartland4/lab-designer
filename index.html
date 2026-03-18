@@ -36,6 +36,9 @@
                     <li><a href="#" data-view="skills" class="nav-link">
                         <span class="nav-icon">&#10003;</span> Skills & Objectives
                     </a></li>
+                    <li><a href="#" data-view="settings" class="nav-link">
+                        <span class="nav-icon">&#9881;</span> Settings
+                    </a></li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
@@ -377,6 +380,107 @@
                 </div>
                 <div id="skills-list" class="tag-cloud"></div>
             </section>
+            <!-- Settings View -->
+            <section id="view-settings" class="view">
+                <div class="view-header">
+                    <h2>Settings</h2>
+                </div>
+                <div class="settings-layout">
+
+                    <!-- AI Provider -->
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3>AI Provider</h3>
+                            <span class="settings-section-hint">Configure an AI model to enhance skill analysis and lab outline generation.</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-ai-provider">Provider</label>
+                            <select id="settings-ai-provider">
+                                <option value="builtin">Built-in (Keyword Matching)</option>
+                                <option value="claude">Claude API (Anthropic)</option>
+                                <option value="openai">OpenAI API</option>
+                                <option value="custom">Custom Endpoint</option>
+                            </select>
+                        </div>
+                        <div id="settings-ai-fields" class="settings-ai-fields" style="display:none;">
+                            <div class="form-group">
+                                <label for="settings-api-key">API Key</label>
+                                <div class="api-key-row">
+                                    <input type="password" id="settings-api-key" placeholder="sk-... or your API key">
+                                    <button type="button" class="btn btn-outline btn-sm" id="settings-toggle-key">Show</button>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="settings-model">Model</label>
+                                    <input type="text" id="settings-model" placeholder="e.g., claude-sonnet-4-20250514 or gpt-4o">
+                                </div>
+                                <div class="form-group" id="settings-endpoint-group" style="display:none;">
+                                    <label for="settings-endpoint">Endpoint URL</label>
+                                    <input type="text" id="settings-endpoint" placeholder="https://your-api.example.com/v1/chat/completions">
+                                </div>
+                            </div>
+                            <div class="form-actions" style="border:none;padding:0;margin-top:8px;">
+                                <button type="button" class="btn btn-secondary btn-sm" id="settings-test-connection">Test Connection</button>
+                                <span id="settings-test-result" class="settings-test-result"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reference Materials -->
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3>Reference Materials</h3>
+                            <span class="settings-section-hint">Attach documentation or source material to inform lab program design. These are sent as context when using an AI provider.</span>
+                        </div>
+                        <div id="settings-references-list" class="settings-references-list"></div>
+                        <div class="settings-ref-actions">
+                            <button type="button" class="btn btn-secondary btn-sm" id="settings-add-url">+ Add URL</button>
+                            <button type="button" class="btn btn-secondary btn-sm" id="settings-add-file">+ Upload File</button>
+                            <input type="file" id="settings-file-input" accept=".txt,.md,.pdf,.docx,.json,.csv" style="display:none">
+                        </div>
+                    </div>
+
+                    <!-- Lab Generation Defaults -->
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3>Lab Generation Defaults</h3>
+                            <span class="settings-section-hint">Control the average duration and number of labs generated by the Program Builder wizard.</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="settings-target-duration">Target Lab Duration (minutes)</label>
+                                <input type="number" id="settings-target-duration" min="15" max="120" step="5" value="45">
+                                <span class="form-hint">Each generated lab will target this duration.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="settings-default-difficulty">Default Difficulty</label>
+                                <select id="settings-default-difficulty">
+                                    <option value="beginner">Beginner</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="advanced">Advanced</option>
+                                    <option value="mixed">Mixed Levels</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-lab-density">Lab Density</label>
+                            <div class="density-slider-container">
+                                <input type="range" id="settings-lab-density" min="0" max="2" step="1" value="1" class="density-slider">
+                                <div class="density-labels">
+                                    <span class="density-label">Light<br><small>Fewer, longer labs</small></span>
+                                    <span class="density-label">Moderate<br><small>Balanced</small></span>
+                                    <span class="density-label">Heavy<br><small>Many shorter labs</small></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-primary" id="settings-save">Save Settings</button>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -395,6 +499,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="js/catalog.js"></script>
     <script src="js/store.js"></script>
+    <script src="js/settings.js"></script>
     <script src="js/exporter.js"></script>
     <script src="js/app.js"></script>
 </body>

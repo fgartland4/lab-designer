@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (viewId === 'labs') renderLabs();
         else if (viewId === 'skills') renderSkills();
         else if (viewId === 'program-builder') setWizardStep(wizardState.currentStep);
+        else if (viewId === 'settings') renderSettings();
     }
 
     navLinks.forEach(link => {
@@ -758,21 +759,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Step 1: Analyze
-    document.getElementById('wizard-analyze').addEventListener('click', () => {
+    document.getElementById('wizard-analyze').addEventListener('click', async () => {
         const desc = document.getElementById('wizard-description').value.trim();
         if (!desc) { alert('Please describe your program.'); return; }
         wizardState.description = desc;
         wizardState.audienceSize = parseInt(document.getElementById('wizard-audience-size').value) || 20;
         wizardState.audienceLevel = document.getElementById('wizard-audience-level').value;
-
         const platformPref = document.getElementById('wizard-platform').value;
-        const analysis = Catalog.analyzeProgram(desc);
-        wizardState.platform = (platformPref === 'auto') ? analysis.platform : platformPref;
+
+        // Show loading if AI is configured
+        const useAI = Settings.isAIConfigured();
+        const grid = document.getElementById('wizard-skills-grid');
+
+        let analysis;
+        if (useAI) {
+            grid.innerHTML = '<div class="wizard-loading"><div class="spinner"></div><p>AI is analyzing your program description...</p></div>';
+            setWizardStep(2);
+
+            const aiResult = await Settings.aiAnalyzeProgram(desc, platformPref);
+            if (aiResult) {
+                analysis = aiResult;
+                wizardState.platform = (platformPref === 'auto') ? (aiResult.platform || 'azure') : platformPref;
+                wizardState.usedAI = true;
+            } else {
+                // Fall back to built-in
+                analysis = Catalog.analyzeProgram(desc);
+                wizardState.platform = (platformPref === 'auto') ? analysis.platform : platformPref;
+                wizardState.usedAI = false;
+            }
+        } else {
+            analysis = Catalog.analyzeProgram(desc);
+            wizardState.platform = (platformPref === 'auto') ? analysis.platform : platformPref;
+            wizardState.usedAI = false;
+        }
 
         // Build skills grid grouped by domain
         const allDomains = Catalog.getDomains();
-        const grid = document.getElementById('wizard-skills-grid');
         grid.innerHTML = '';
+
+        // Show AI badge if used
+        if (wizardState.usedAI) {
+            const badge = document.createElement('div');
+            badge.innerHTML = '<span class="wizard-ai-badge">AI-Enhanced</span> Skills suggested by AI provider';
+            badge.style.cssText = 'margin-bottom:12px;font-size:0.8rem;color:var(--color-text-light);';
+            grid.appendChild(badge);
+        }
+
+        // Show reference material chips
+        const refs = Settings.getReferences();
+        if (refs.length > 0) {
+            const chipRow = document.createElement('div');
+            chipRow.className = 'wizard-ref-chips';
+            refs.forEach(ref => {
+                chipRow.innerHTML += `<span class="wizard-ref-chip">${escHtml(ref.title)}</span>`;
+            });
+            grid.appendChild(chipRow);
+        }
 
         allDomains.forEach(domain => {
             const matchedDomain = analysis.skillsByDomain[domain.id];
@@ -799,12 +841,12 @@ document.addEventListener('DOMContentLoaded', () => {
             grid.appendChild(group);
         });
 
-        setWizardStep(2);
+        if (!useAI) setWizardStep(2);
     });
 
     // Step 2: Generate outlines
     document.getElementById('wizard-back-1').addEventListener('click', () => setWizardStep(1));
-    document.getElementById('wizard-generate-outlines').addEventListener('click', () => {
+    document.getElementById('wizard-generate-outlines').addEventListener('click', async () => {
         // Gather selected skills
         const selected = [];
         document.querySelectorAll('#wizard-skills-grid .wizard-skill-tag.selected').forEach(tag => {
@@ -813,10 +855,38 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selected.length === 0) { alert('Select at least one skill.'); return; }
         wizardState.selectedSkills = selected;
 
-        // Generate outlines
-        wizardState.labOutlines = Catalog.generateLabOutlines(selected, wizardState.platform);
+        const settings = Settings.get();
+        const useAI = Settings.isAIConfigured();
+        let outlines = null;
+
+        if (useAI) {
+            // Show loading state
+            const container = document.getElementById('wizard-outlines-list');
+            container.innerHTML = '<div class="wizard-loading"><div class="spinner"></div><p>AI is generating lab outlines...</p></div>';
+            setWizardStep(3);
+
+            outlines = await Settings.aiGenerateOutlines(
+                selected,
+                wizardState.platform,
+                wizardState.audienceLevel
+            );
+        }
+
+        if (!outlines) {
+            // Fall back to built-in catalog
+            outlines = Catalog.generateLabOutlines(selected, wizardState.platform);
+        }
+
+        // Apply density and duration adjustments
+        outlines = Catalog.adjustOutlinesForDensity(
+            outlines,
+            settings.labDensity || 'moderate',
+            settings.targetLabDuration || 45
+        );
+
+        wizardState.labOutlines = outlines;
         renderWizardOutlines();
-        setWizardStep(3);
+        if (!useAI) setWizardStep(3);
     });
 
     function renderWizardOutlines() {
@@ -1100,8 +1170,148 @@ document.addEventListener('DOMContentLoaded', () => {
         openCourseEditor(course.id);
     });
 
-    // Wire up Program Builder in showView
-    const originalShowView = showView;
+    // ---- Settings ----
+    function renderSettings() {
+        const s = Settings.get();
+        document.getElementById('settings-ai-provider').value = s.aiProvider || 'builtin';
+        document.getElementById('settings-api-key').value = s.apiKey || '';
+        document.getElementById('settings-model').value = s.model || '';
+        document.getElementById('settings-endpoint').value = s.endpointUrl || '';
+        document.getElementById('settings-target-duration').value = s.targetLabDuration || 45;
+        document.getElementById('settings-default-difficulty').value = s.defaultDifficulty || 'beginner';
+
+        const densityMap = { light: 0, moderate: 1, heavy: 2 };
+        document.getElementById('settings-lab-density').value = densityMap[s.labDensity] || 1;
+
+        toggleAIFields();
+        renderReferences();
+    }
+
+    function toggleAIFields() {
+        const provider = document.getElementById('settings-ai-provider').value;
+        const fields = document.getElementById('settings-ai-fields');
+        const endpointGroup = document.getElementById('settings-endpoint-group');
+        fields.style.display = provider === 'builtin' ? 'none' : 'block';
+        endpointGroup.style.display = provider === 'custom' ? 'block' : 'none';
+    }
+
+    document.getElementById('settings-ai-provider').addEventListener('change', toggleAIFields);
+
+    document.getElementById('settings-toggle-key').addEventListener('click', () => {
+        const input = document.getElementById('settings-api-key');
+        const btn = document.getElementById('settings-toggle-key');
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = 'Hide';
+        } else {
+            input.type = 'password';
+            btn.textContent = 'Show';
+        }
+    });
+
+    document.getElementById('settings-test-connection').addEventListener('click', async () => {
+        const resultEl = document.getElementById('settings-test-result');
+        resultEl.textContent = 'Testing...';
+        resultEl.className = 'settings-test-result';
+
+        // Save current values before testing
+        saveSettingsFromForm();
+
+        const result = await Settings.testConnection();
+        resultEl.textContent = result.message;
+        resultEl.className = 'settings-test-result ' + (result.success ? 'success' : 'error');
+    });
+
+    document.getElementById('settings-save').addEventListener('click', () => {
+        saveSettingsFromForm();
+        alert('Settings saved.');
+    });
+
+    function saveSettingsFromForm() {
+        const densityValues = ['light', 'moderate', 'heavy'];
+        Settings.update({
+            aiProvider: document.getElementById('settings-ai-provider').value,
+            apiKey: document.getElementById('settings-api-key').value,
+            model: document.getElementById('settings-model').value,
+            endpointUrl: document.getElementById('settings-endpoint').value,
+            targetLabDuration: parseInt(document.getElementById('settings-target-duration').value) || 45,
+            labDensity: densityValues[parseInt(document.getElementById('settings-lab-density').value)] || 'moderate',
+            defaultDifficulty: document.getElementById('settings-default-difficulty').value,
+        });
+    }
+
+    // Reference materials
+    function renderReferences() {
+        const refs = Settings.getReferences();
+        const container = document.getElementById('settings-references-list');
+        if (refs.length === 0) {
+            container.innerHTML = '<div class="settings-ref-empty">No reference materials added yet.</div>';
+            return;
+        }
+        container.innerHTML = refs.map(ref => `
+            <div class="settings-ref-item" data-id="${ref.id}">
+                <span class="ref-type ${ref.type}">${ref.type}</span>
+                <span class="ref-title" title="${escHtml(ref.title)}">${escHtml(ref.title)}</span>
+                ${ref.url ? `<a href="${escHtml(ref.url)}" target="_blank" style="font-size:0.75rem;color:var(--color-primary);">Open</a>` : ''}
+                <button class="ref-remove" data-id="${ref.id}">&times;</button>
+            </div>
+        `).join('');
+
+        container.querySelectorAll('.ref-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+                Settings.removeReference(btn.dataset.id);
+                renderReferences();
+            });
+        });
+    }
+
+    document.getElementById('settings-add-url').addEventListener('click', () => {
+        openModal('Add Reference URL', `
+            <div class="form-group">
+                <label for="ref-url">Documentation URL</label>
+                <input type="url" id="ref-url" placeholder="https://learn.microsoft.com/...">
+            </div>
+            <div class="form-group">
+                <label for="ref-title">Title (optional)</label>
+                <input type="text" id="ref-title" placeholder="Auto-detected from URL">
+            </div>`,
+            `<button class="btn btn-secondary" id="ref-cancel">Cancel</button>
+             <button class="btn btn-primary" id="ref-save-url">Add Reference</button>`
+        );
+        document.getElementById('ref-url').focus();
+        document.getElementById('ref-cancel').addEventListener('click', closeModal);
+        document.getElementById('ref-save-url').addEventListener('click', () => {
+            const url = document.getElementById('ref-url').value.trim();
+            if (!url) { alert('Enter a URL.'); return; }
+            const title = document.getElementById('ref-title').value.trim() || url.split('/').filter(Boolean).pop() || 'Reference';
+            Settings.addReference({ title, type: 'url', url, content: '' });
+            closeModal();
+            renderReferences();
+        });
+    });
+
+    document.getElementById('settings-add-file').addEventListener('click', () => {
+        document.getElementById('settings-file-input').click();
+    });
+
+    document.getElementById('settings-file-input').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const content = ev.target.result;
+            // Truncate very large files to 50KB
+            const truncated = content.length > 50000 ? content.slice(0, 50000) + '\n...(truncated)' : content;
+            Settings.addReference({
+                title: file.name,
+                type: 'file',
+                content: truncated,
+            });
+            renderReferences();
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    });
 
     // ---- Utility ----
     function escHtml(str) {

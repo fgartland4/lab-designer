@@ -1572,10 +1572,73 @@ const Catalog = (() => {
         return lines;
     }
 
+    /**
+     * Adjust generated lab outlines based on density and target duration settings.
+     * - light: keep only 1st template per skill, merge if under 20 min
+     * - moderate: keep all (default behavior)
+     * - heavy: split multi-task labs into separate focused labs
+     * Also adjusts duration to approach the target.
+     */
+    function adjustOutlinesForDensity(outlines, density, targetDuration) {
+        targetDuration = targetDuration || 45;
+        let adjusted = outlines.map(o => ({ ...o })); // shallow copy
+
+        if (density === 'light') {
+            // Keep only the first lab per skill
+            const seen = new Set();
+            adjusted = adjusted.filter(o => {
+                if (seen.has(o.skillName)) return false;
+                seen.add(o.skillName);
+                return true;
+            });
+            // Scale durations up toward target (longer labs)
+            adjusted.forEach(o => {
+                o.duration = Math.max(o.duration, targetDuration);
+            });
+
+        } else if (density === 'heavy') {
+            // Split labs with 2+ tasks into separate labs (one per task)
+            const expanded = [];
+            adjusted.forEach(o => {
+                if (o.tasks.length >= 2) {
+                    o.tasks.forEach((task, ti) => {
+                        expanded.push({
+                            ...o,
+                            title: `${o.title} — ${task.name}`,
+                            description: `Focused lab: ${task.name}. ${o.description}`,
+                            duration: Math.round(targetDuration * 0.8),
+                            tasks: [task],
+                        });
+                    });
+                } else {
+                    expanded.push(o);
+                }
+            });
+            adjusted = expanded;
+            // Scale durations down toward target (shorter labs)
+            adjusted.forEach(o => {
+                o.duration = Math.min(o.duration, targetDuration);
+            });
+
+        } else {
+            // Moderate — adjust duration toward target
+            adjusted.forEach(o => {
+                const ratio = targetDuration / 45; // 45 is the baseline
+                o.duration = Math.round(o.duration * ratio);
+                o.duration = Math.max(15, Math.min(120, o.duration));
+            });
+        }
+
+        // Re-enable all
+        adjusted.forEach(o => { o.enabled = true; });
+        return adjusted;
+    }
+
     return {
         getDomains,
         analyzeProgram,
         generateLabOutlines,
+        adjustOutlinesForDensity,
         buildUnifiedEnvironment,
         generateBuildScript,
         getScoringMethods,
