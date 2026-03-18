@@ -11,23 +11,23 @@
 :root {
     --color-bg: #f0f2f5;
     --color-surface: #ffffff;
-    --color-primary: #0693e3;
-    --color-primary-hover: #057cc0;
-    --color-primary-light: #e0f3ff;
-    --color-accent: #9b51e0;
+    --color-primary: #00c853;
+    --color-primary-hover: #00a846;
+    --color-primary-light: #e5faf0;
+    --color-accent: #2e5e4e;
     --color-secondary: #6b7a8d;
     --color-danger: #d63031;
     --color-danger-hover: #b71c1c;
-    --color-success: #00b894;
+    --color-success: #00c853;
     --color-warning: #f39c12;
     --color-text: #32373c;
     --color-text-light: #6b7a8d;
     --color-border: #dfe6ed;
-    --color-sidebar: #1a1f2e;
-    --color-sidebar-text: #a0aec0;
-    --color-sidebar-active: #0693e3;
-    --gradient-brand: linear-gradient(135deg, #0693e3, #9b51e0);
-    --gradient-brand-subtle: linear-gradient(135deg, rgba(6,147,227,0.08), rgba(155,81,224,0.08));
+    --color-sidebar: #2e4a3e;
+    --color-sidebar-text: #b0c9bc;
+    --color-sidebar-active: #00c853;
+    --gradient-brand: linear-gradient(135deg, #00c853, #2e5e4e);
+    --gradient-brand-subtle: linear-gradient(135deg, rgba(0,200,83,0.08), rgba(46,94,78,0.08));
     --radius: 10px;
     --radius-sm: 6px;
     --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
@@ -67,7 +67,7 @@ body {
 .sidebar-header {
     padding: 24px 22px 18px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
-    background: linear-gradient(135deg, rgba(6,147,227,0.12), rgba(155,81,224,0.12));
+    background: linear-gradient(135deg, rgba(0,200,83,0.15), rgba(46,94,78,0.1));
 }
 
 .sidebar-header h1 {
@@ -83,7 +83,7 @@ body {
 
 .sidebar-header .subtitle {
     font-size: 0.7rem;
-    color: #8ed1fc;
+    color: #69f0ae;
     display: block;
     margin-top: 3px;
     text-transform: uppercase;
@@ -120,7 +120,7 @@ body {
 }
 
 .nav-link.active {
-    background: linear-gradient(135deg, rgba(6,147,227,0.18), rgba(155,81,224,0.12));
+    background: linear-gradient(135deg, rgba(0,200,83,0.2), rgba(46,94,78,0.15));
     color: #fff;
     border-left-color: var(--color-primary);
 }
@@ -275,7 +275,7 @@ body {
     font-size: 0.75rem;
     font-weight: 500;
     background: var(--color-primary-light);
-    color: #057cc0;
+    color: #00a846;
 }
 
 .tag-removable {
@@ -327,10 +327,10 @@ body {
 .btn-primary {
     background: var(--gradient-brand);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(6,147,227,0.25);
+    box-shadow: 0 2px 8px rgba(0,200,83,0.3);
 }
 .btn-primary:hover {
-    box-shadow: 0 4px 14px rgba(6,147,227,0.35);
+    box-shadow: 0 4px 14px rgba(0,200,83,0.4);
     transform: translateY(-1px);
 }
 
@@ -409,7 +409,7 @@ select {
 input:focus, textarea:focus, select:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(6, 147, 227, 0.12);
+    box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.15);
 }
 
 .form-actions {
@@ -1100,9 +1100,9 @@ input:focus, textarea:focus, select:focus {
     border-radius: 99px;
     font-size: 0.75rem;
     font-weight: 500;
-    background: linear-gradient(135deg, rgba(6,147,227,0.1), rgba(155,81,224,0.1));
+    background: var(--color-primary-light);
     color: var(--color-accent);
-    border: 1px solid rgba(155,81,224,0.2);
+    border: 1px solid rgba(0,200,83,0.2);
 }
 
 /* Wizard Summary */
