@@ -923,77 +923,42 @@ document.addEventListener('DOMContentLoaded', () => {
         initChat();
     });
 
-    // Accept design → populate Step 2 skills grid
+    // Accept design → populate Step 2 skills grid (AI-only, no catalog)
     document.getElementById('wizard-accept-design').addEventListener('click', () => {
         const ds = wizardState.designSummary;
         if (!ds) return;
 
-        const allDomains = Catalog.getDomains();
         const grid = document.getElementById('wizard-skills-grid');
         grid.innerHTML = '';
 
-        // AI badge
         const badge = document.createElement('div');
-        badge.innerHTML = '<span class="wizard-ai-badge">AI-Designed</span> Skills recommended through conversation';
+        badge.innerHTML = '<span class="wizard-ai-badge">AI-Designed</span> Skills recommended through conversation — toggle to include or exclude';
         badge.style.cssText = 'margin-bottom:12px;font-size:0.8rem;color:var(--color-text-light);';
         grid.appendChild(badge);
 
-        const recommendedSkills = ds.skills || [];
-        const recommendedTopics = ds.topics || [];
-        const allCatalogSkillNames = new Set();
+        const allSkills = [...(ds.skills || []), ...(ds.topics || [])];
 
-        // Collect all catalog skill names for comparison
-        allDomains.forEach(d => d.skills.forEach(s => allCatalogSkillNames.add(s.name)));
-
-        // Find AI-recommended skills NOT in the catalog — these are custom/new
-        const customSkills = recommendedSkills.filter(s => !allCatalogSkillNames.has(s));
-        const customTopics = recommendedTopics.filter(t => !allCatalogSkillNames.has(t));
-
-        // Show AI-recommended custom skills FIRST (these are the most relevant)
-        if (customSkills.length > 0 || customTopics.length > 0) {
-            const customGroup = document.createElement('div');
-            customGroup.className = 'wizard-domain-group';
-            customGroup.style.borderColor = 'var(--color-primary)';
-            customGroup.innerHTML = '<div class="wizard-domain-title" style="color:var(--color-primary);">AI-Recommended Skills</div>';
-
-            const customRow = document.createElement('div');
-            customRow.className = 'wizard-domain-skills';
-
-            [...customSkills, ...customTopics].forEach(skillName => {
-                const tag = document.createElement('span');
-                tag.className = 'wizard-skill-tag selected';
-                tag.textContent = skillName;
-                tag.dataset.skill = skillName;
-                tag.addEventListener('click', () => tag.classList.toggle('selected'));
-                customRow.appendChild(tag);
-            });
-
-            customGroup.appendChild(customRow);
-            grid.appendChild(customGroup);
-        }
-
-        // Then show catalog domains with any matching skills pre-selected
-        allDomains.forEach(domain => {
+        if (allSkills.length > 0) {
             const group = document.createElement('div');
             group.className = 'wizard-domain-group';
-            group.innerHTML = `<div class="wizard-domain-title">${escHtml(domain.name)}</div>`;
+            group.style.borderColor = 'var(--color-primary)';
+            group.innerHTML = `<div class="wizard-domain-title" style="color:var(--color-primary);">Recommended Skills for: ${escHtml(ds.programName || 'Your Program')}</div>`;
 
             const skillsRow = document.createElement('div');
             skillsRow.className = 'wizard-domain-skills';
 
-            domain.skills.forEach(skill => {
-                const isSelected = recommendedSkills.includes(skill.name);
+            allSkills.forEach(skillName => {
                 const tag = document.createElement('span');
-                tag.className = 'wizard-skill-tag' + (isSelected ? ' selected' : '');
-                tag.textContent = skill.name;
-                tag.dataset.skill = skill.name;
+                tag.className = 'wizard-skill-tag selected';
+                tag.textContent = skillName;
+                tag.dataset.skill = skillName;
                 tag.addEventListener('click', () => tag.classList.toggle('selected'));
                 skillsRow.appendChild(tag);
             });
 
             group.appendChild(skillsRow);
             grid.appendChild(group);
-        });
+        }
 
         setWizardStep(2);
     });
@@ -1026,14 +991,8 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
         if (!outlines || outlines.length === 0) {
-            // If AI failed, try catalog as last resort for any matching skills
-            const catalogOutlines = Catalog.generateLabOutlines(selected, wizardState.platform);
-            if (catalogOutlines.length > 0) {
-                outlines = catalogOutlines;
-            } else {
-                container.innerHTML = '<div class="wizard-loading"><p style="color:var(--color-danger);">Failed to generate lab outlines. Please go back and try again, or check your AI provider settings.</p></div>';
-                return;
-            }
+            container.innerHTML = '<div class="wizard-loading"><p style="color:var(--color-danger);">Failed to generate lab outlines. Please go back and try again, or check your AI provider settings.</p></div>';
+            return;
         }
 
         // Apply density and duration adjustments
