@@ -895,10 +895,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${ds.notes ? `<div class="summary-field"><strong>Notes</strong><span>${escHtml(ds.notes)}</span></div>` : ''}
                 `;
                 container.appendChild(card);
+
+                // Add accept/restart buttons INSIDE the chat so they're visible
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'chat-accept-actions';
+                actionsDiv.innerHTML = `
+                    <button class="btn btn-primary btn-lg chat-accept-btn" id="chat-accept-inline">Accept Design &amp; Build Program &rarr;</button>
+                    <button class="btn btn-ghost chat-restart-btn" id="chat-restart-inline">Start Over</button>
+                `;
+                container.appendChild(actionsDiv);
                 container.scrollTop = container.scrollHeight;
 
-                // Show accept button
+                // Wire inline buttons
+                document.getElementById('chat-accept-inline').addEventListener('click', () => {
+                    document.getElementById('wizard-accept-design').click();
+                });
+                document.getElementById('chat-restart-inline').addEventListener('click', () => {
+                    initChat();
+                });
+
+                // Also show the external actions (backup if scrolled)
                 document.getElementById('wizard-step1-actions').style.display = '';
+
+                // Disable chat input — design is ready
+                setChatBusy(true);
+                document.getElementById('chat-input').placeholder = 'Design ready — click "Accept Design" above to proceed.';
             }
         } else {
             // Normal conversation message

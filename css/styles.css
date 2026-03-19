@@ -1646,6 +1646,29 @@ input:focus, textarea:focus, select:focus {
     40% { transform: scale(1); opacity: 1; }
 }
 
+.chat-accept-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 0;
+    margin-top: 8px;
+    animation: chatFadeIn 0.4s ease;
+}
+
+.chat-accept-btn {
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    font-size: 1rem;
+    padding: 14px 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.chat-restart-btn {
+    font-size: 0.8rem;
+}
+
 .chat-input-bar {
     display: flex;
     gap: 10px;
