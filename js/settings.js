@@ -66,11 +66,14 @@ const Settings = (() => {
 
     function parsePromptsMd(md) {
         const prompts = {};
-        // Match sections: ## SECTION_ID — Description\n```\n...content...\n```
-        const regex = /^## (\S+)\s.*?\n```[^\n]*\n([\s\S]*?)```/gm;
+        // Match sections: ## SECTION_ID — Description, then code fence (with possible blank lines between)
+        const regex = /^## (\S+)\s[^\n]*\n+```[^\n]*\n([\s\S]*?)```/gm;
         let match;
         while ((match = regex.exec(md)) !== null) {
             prompts[match[1]] = match[2].trim();
+        }
+        if (Object.keys(prompts).length === 0) {
+            console.error('[Settings] parsePromptsMd: NO sections matched! Check prompts.md format.');
         }
         return prompts;
     }
