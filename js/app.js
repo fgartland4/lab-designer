@@ -917,44 +917,147 @@ document.addEventListener('DOMContentLoaded', () => {
         initChat();
     });
 
-    // Accept design → populate Step 2 skills grid (AI-only, no catalog)
-    document.getElementById('wizard-accept-design').addEventListener('click', () => {
+    // Accept design → generate everything and open course editor
+    document.getElementById('wizard-accept-design').addEventListener('click', async () => {
         const ds = wizardState.designSummary;
         if (!ds) return;
 
-        const grid = document.getElementById('wizard-skills-grid');
-        grid.innerHTML = '';
-
-        const badge = document.createElement('div');
-        badge.innerHTML = '<span class="wizard-ai-badge">AI-Designed</span> Skills recommended through conversation — toggle to include or exclude';
-        badge.style.cssText = 'margin-bottom:12px;font-size:0.8rem;color:var(--color-text-light);';
-        grid.appendChild(badge);
-
         const allSkills = [...(ds.skills || []), ...(ds.topics || [])];
-
-        if (allSkills.length > 0) {
-            const group = document.createElement('div');
-            group.className = 'wizard-domain-group';
-            group.style.borderColor = 'var(--color-primary)';
-            group.innerHTML = `<div class="wizard-domain-title" style="color:var(--color-primary);">Recommended Skills for: ${escHtml(ds.programName || 'Your Program')}</div>`;
-
-            const skillsRow = document.createElement('div');
-            skillsRow.className = 'wizard-domain-skills';
-
-            allSkills.forEach(skillName => {
-                const tag = document.createElement('span');
-                tag.className = 'wizard-skill-tag selected';
-                tag.textContent = skillName;
-                tag.dataset.skill = skillName;
-                tag.addEventListener('click', () => tag.classList.toggle('selected'));
-                skillsRow.appendChild(tag);
-            });
-
-            group.appendChild(skillsRow);
-            grid.appendChild(group);
+        if (allSkills.length === 0) {
+            addChatBubble('system', 'No skills were identified. Please continue the conversation to refine your program design.');
+            return;
         }
 
-        setWizardStep(2);
+        wizardState.selectedSkills = allSkills;
+        wizardState.description = ds.description || '';
+        wizardState.platform = ds.platform || 'azure';
+        wizardState.audienceLevel = ds.audienceLevel || 'beginner';
+
+        // Show building progress in chat
+        document.getElementById('wizard-step1-actions').style.display = 'none';
+        addChatBubble('system', 'Building your lab program — generating lab outlines, environment, and build script...');
+        setChatBusy(true);
+        showTyping(true);
+
+        const settings = Settings.get();
+
+        // 1. Generate lab outlines via AI
+        let outlines = await Settings.aiGenerateOutlines(
+            allSkills,
+            wizardState.platform,
+            wizardState.audienceLevel,
+            wizardState.designSummary
+        );
+
+        if (!outlines || outlines.length === 0) {
+            showTyping(false);
+            setChatBusy(false);
+            addChatBubble('system', 'Failed to generate lab outlines. Please check your AI provider settings and try again.');
+            document.getElementById('wizard-step1-actions').style.display = '';
+            return;
+        }
+
+        // Apply density and duration adjustments
+        outlines = Catalog.adjustOutlinesForDensity(
+            outlines,
+            settings.labDensity || 'moderate',
+            settings.targetLabDuration || 45
+        );
+
+        // 2. Build unified environment
+        const unifiedEnv = Catalog.buildUnifiedEnvironment(outlines, wizardState.platform);
+
+        // 3. Generate build script via AI
+        let buildScript = await Settings.aiGenerateBuildScript(unifiedEnv, wizardState.designSummary);
+        if (!buildScript) {
+            buildScript = Catalog.generateBuildScript(unifiedEnv);
+        }
+
+        showTyping(false);
+
+        // 4. Create all skills (deduplicated)
+        const skillIds = [];
+        const uniqueSkills = [...new Set(outlines.map(o => o.skillName))];
+        uniqueSkills.forEach(name => {
+            const skill = Store.addSkillIfNotExists(name);
+            if (skill) skillIds.push(skill.id);
+        });
+
+        // 5. Create all labs with proper skill tagging
+        const moduleMap = {};
+        outlines.forEach(outline => {
+            const steps = [];
+            (outline.tasks || []).forEach(task => {
+                (task.activities || []).forEach(act => {
+                    steps.push({ title: act.title, instructions: act.instructions });
+                });
+            });
+
+            // Tag this lab with ALL matching skill IDs
+            const labSkillIds = [];
+            const allStoreSkills = Store.getSkills();
+            // Primary skill
+            const primarySkill = allStoreSkills.find(s => s.name === outline.skillName);
+            if (primarySkill) labSkillIds.push(primarySkill.id);
+            // Also check if any other confirmed skills are mentioned in the lab title/description
+            allStoreSkills.forEach(s => {
+                if (labSkillIds.includes(s.id)) return;
+                const searchText = `${outline.title} ${outline.description}`.toLowerCase();
+                if (searchText.includes(s.name.toLowerCase())) {
+                    labSkillIds.push(s.id);
+                }
+            });
+
+            const scoringText = (outline.scoring || []).map(s => `${s.name}: ${s.description}`).join('\n');
+
+            const lab = Store.saveLab({
+                title: outline.title,
+                description: outline.description,
+                objectives: `Skills: ${outline.skillName}\n\nScoring Methods:\n${scoringText}`,
+                duration: outline.duration,
+                difficulty: outline.difficulty,
+                status: 'draft',
+                platform: unifiedEnv.platform,
+                skillIds: labSkillIds,
+                vms: unifiedEnv.vms,
+                cloudResources: unifiedEnv.cloudResources,
+                credentials: unifiedEnv.credentials,
+                envNotes: unifiedEnv.notes,
+                buildScript,
+                steps,
+            });
+
+            const domainKey = outline.skillName;
+            if (!moduleMap[domainKey]) moduleMap[domainKey] = [];
+            moduleMap[domainKey].push(lab.id);
+        });
+
+        // 6. Create course with modules
+        const courseName = ds.programName || wizardState.description.slice(0, 60);
+        const modules = Object.entries(moduleMap).map(([name, labIds]) => ({
+            name,
+            labIds,
+        }));
+
+        const course = Store.saveCourse({
+            name: courseName,
+            description: `${ds.description || wizardState.description}\n\nLevel: ${wizardState.audienceLevel}`,
+            level: wizardState.audienceLevel === 'mixed' ? 'beginner' : wizardState.audienceLevel,
+            status: 'draft',
+            prerequisites: '',
+            skillIds,
+            modules,
+        });
+
+        setChatBusy(false);
+
+        // Show completion message briefly, then navigate
+        addChatBubble('system', `Created: ${outlines.length} labs, ${uniqueSkills.length} skills, 1 course ("${courseName}"). Opening course editor...`);
+
+        // Small delay so the user sees the completion message
+        setTimeout(() => {
+            openCourseEditor(course.id);
+        }, 1500);
     });
 
     // Step 2: Generate outlines
