@@ -52,10 +52,11 @@ const Settings = (() => {
     async function loadPrompts() {
         if (_promptsCache) return _promptsCache;
         try {
-            const resp = await fetch('prompts.md');
-            if (!resp.ok) throw new Error('Failed to load prompts.md');
+            const resp = await fetch('prompts.md?v=' + Date.now()); // cache-bust
+            if (!resp.ok) throw new Error('Failed to load prompts.md: ' + resp.status);
             const md = await resp.text();
             _promptsCache = parsePromptsMd(md);
+            console.log('[Settings] Loaded prompts.md sections:', Object.keys(_promptsCache).join(', '));
         } catch (e) {
             console.warn('Could not load prompts.md, using inline fallbacks:', e);
             _promptsCache = {};
