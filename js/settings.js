@@ -397,11 +397,27 @@ Analyze this program and return the JSON with matched skills.`;
 PROGRAM DESIGN CONTEXT (from the conversation with the user):
 - Program: ${designContext.programName || 'N/A'}
 - Description: ${designContext.description || 'N/A'}
-- Audience: ${designContext.audienceLevel || 'beginner'} level
+- Audience Level: ${designContext.audienceLevel || 'beginner'}
 - Platform: ${designContext.platform || platform}
+- Delivery Type: ${designContext.deliveryType || 'self-paced'}
+- Lab Intent: ${designContext.labIntent || 'learn'}
+- Desired Outcome: ${designContext.desiredOutcome || 'general-learning'}
+- Audience Assumptions: ${designContext.audienceAssumptions || 'No assumptions specified'}
 - Notes: ${designContext.notes || 'None'}
 
-The labs you generate MUST be directly relevant to this program description. Create labs that specifically teach the skills and topics described above — do NOT generate generic cloud labs. The lab titles, descriptions, tasks, and activities should all be tailored to this specific program.`;
+IMPORTANT DESIGN RULES:
+- The labs you generate MUST be directly relevant to this program description.
+- Tailor lab style to the LAB INTENT:
+  * "learn" labs: guided exploration with detailed step-by-step instructions
+  * "practice" labs: provide scenario and goals with moderate guidance
+  * "validate" labs: challenge-based with minimal instructions, focus on assessment/scoring
+- Tailor to DELIVERY TYPE:
+  * "instructor-led": include instructor demo notes, discussion prompts
+  * "self-paced": ensure all context is self-contained in instructions
+- Tailor to DESIRED OUTCOME:
+  * "certification-prep": align tasks with exam objectives
+  * "job-readiness": use realistic workplace scenarios
+- Do NOT generate generic cloud labs. Lab titles, descriptions, tasks, and activities should all be tailored to this specific program.`;
         }
 
         const difficulty = audienceLevel === 'mixed' ? 'intermediate' : audienceLevel;
