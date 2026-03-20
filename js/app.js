@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (viewId === 'courses') renderCourses();
         else if (viewId === 'labs') renderLabs();
         else if (viewId === 'skills') renderSkills();
-        else if (viewId === 'program-builder') { checkAIGate(); if (Settings.isAIConfigured()) { if (wizardState.chatMessages.length === 0) initChat(); setWizardStep(wizardState.currentStep); } }
+        else if (viewId === 'lab-designer') { checkAIGate(); if (Settings.isAIConfigured()) { if (wizardState.chatMessages.length === 0) initChat(); setWizardStep(wizardState.currentStep); } }
         else if (viewId === 'settings') renderSettings();
     }
 
@@ -734,7 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.value = '';
     });
 
-    // ---- Program Builder Wizard ----
+    // ---- Lab Designer Wizard ----
     let wizardState = {
         description: '',
         audienceLevel: 'beginner',

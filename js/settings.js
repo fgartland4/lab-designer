@@ -280,7 +280,7 @@ const Settings = (() => {
      */
     async function getWelcomeMessage() {
         return await getPrompt('STEP1_WELCOME', {},
-            'Welcome to the Lab Program Builder! Tell me about the training program you want to create.\n\nWhat program would you like to build?'
+            'Welcome to the Lab Designer! Tell me about the training program you want to create.\n\nWhat program would you like to build?'
         );
     }
 
