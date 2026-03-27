@@ -502,6 +502,7 @@ body {
     padding: 20px 24px;
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
     gap: 16px;
     background-color: var(--color-bg);
 }
