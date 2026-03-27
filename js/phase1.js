@@ -524,6 +524,11 @@ const Phase1 = (() => {
             }
         }
 
+        // Recommended difficulty
+        if (structured.recommendedDifficulty) {
+            project.recommendedDifficulty = structured.recommendedDifficulty;
+        }
+
         // Merge scenario seeds
         if (Array.isArray(structured.scenarioSeeds)) {
             if (!Array.isArray(project.scenarioSeeds)) project.scenarioSeeds = [];

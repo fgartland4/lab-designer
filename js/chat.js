@@ -69,17 +69,23 @@ CONVERSATION FLOW:
 2. Gather: target audiences (roles, responsibilities, prerequisites), business objectives, learning objectives, success criteria, and the technology/platform being taught.
 3. Ask for documentation links — this is critical for specialized software (Commvault, Dragos, Hyland, OneStream, etc.) that you may not have deep knowledge of.
 4. Explore real-world scenario ideas that could become authentic lab exercises.
-5. When you feel you have enough information, ask probing questions like "Is there anything else I should know about your learners or the technology?" and "Are there common mistakes or misconceptions learners face?"
-6. Let the person know they can always come back and add more details later.
+5. Based on what you learn about the audience's experience level, the complexity of the technology, and the learning objectives, recommend a difficulty level for the labs (Beginner, Intermediate, Advanced, or Expert). Explain your reasoning — e.g., "Given that your audience already has networking fundamentals and you're teaching advanced routing concepts, I'd recommend these labs be built at the Advanced level."
+6. When you feel you have enough information, ask probing questions like "Is there anything else I should know about your learners or the technology?" and "Are there common mistakes or misconceptions learners face?"
+7. Let the person know they can always come back and add more details later.
 
 PROGRAM NAMING:
 - If the user hasn't named their program yet, suggest a clear, descriptive name based on what they've described.
 - Include the program name in your structured output when you have one.
 
+DIFFICULTY RECOMMENDATION:
+- Always recommend a difficulty level based on audience prerequisites, technology complexity, and learning objectives.
+- Valid levels: "beginner", "intermediate", "advanced", "expert"
+- Include your recommendation in the structured output as "recommendedDifficulty".
+
 When you have gathered sufficient information, output a structured block:
 \`\`\`
 ===PHASE1_DATA===
-{ "programName": "...", "audiences": [{ "role": "...", "responsibilities": "...", "prerequisites": "..." }], "businessObjectives": ["..."], "learningObjectives": ["..."], "competencies": [{ "name": "...", "description": "...", "source": "AI-extracted" }], "successCriteria": ["..."], "technologyPlatform": "...", "documentationRefs": [{ "url": "...", "title": "...", "notes": "..." }], "scenarioSeeds": [{ "title": "...", "description": "..." }] }
+{ "programName": "...", "audiences": [{ "role": "...", "responsibilities": "...", "prerequisites": "..." }], "businessObjectives": ["..."], "learningObjectives": ["..."], "competencies": [{ "name": "...", "description": "...", "source": "AI-extracted" }], "successCriteria": ["..."], "technologyPlatform": "...", "recommendedDifficulty": "intermediate", "documentationRefs": [{ "url": "...", "title": "...", "notes": "..." }], "scenarioSeeds": [{ "title": "...", "description": "..." }] }
 ===END_PHASE1_DATA===
 \`\`\`
 
@@ -109,10 +115,7 @@ Be opinionated — propose strong names. The program owner can refine them.`;
             prompt += `\n\nWhen a skill framework is selected, map labs and activities to framework competencies where appropriate.`;
         }
 
-        prompt += `\n\nAt the end of this phase, ask the program owner about their preferred instruction style:
-- **Challenge-based**: Give learners a goal and let them figure out the steps
-- **Step-by-step**: Detailed numbered instructions for each task
-- **Mixed**: Challenge-based for some activities, step-by-step for others
+        prompt += `\n\nDo NOT ask about instruction style (challenge-based vs step-by-step) — that is configured in Phase 3.
 
 Output the program structure as:
 \`\`\`

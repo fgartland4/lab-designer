@@ -590,6 +590,35 @@ body {
     margin-bottom: 8px;
 }
 
+.chat-bubble .chat-question {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(0, 208, 130, 0.06);
+    border-left: 3px solid var(--color-primary);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-weight: 500;
+}
+
+.chat-bubble .chat-list {
+    margin: 8px 0;
+    padding-left: 20px;
+    list-style: none;
+}
+
+.chat-bubble .chat-list li {
+    position: relative;
+    padding: 3px 0 3px 12px;
+    line-height: 1.5;
+}
+
+.chat-bubble .chat-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
 .chat-bubble p:last-child {
     margin-bottom: 0;
 }

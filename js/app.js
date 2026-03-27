@@ -343,15 +343,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function formatMessage(text) {
         if (!text) return '';
-        return text
+
+        // Escape HTML
+        let safe = text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/`(.+?)`/g, '<code>$1</code>')
-            .replace(/\n- /g, '\n&bull; ')
-            .replace(/\n\d+\.\s/g, (m) => '\n' + m.trim() + ' ')
-            .replace(/\n/g, '<br>');
+            .replace(/>/g, '&gt;');
+
+        // Split into paragraphs on double-newlines
+        const paragraphs = safe.split(/\n\n+/);
+        const formatted = paragraphs.map(para => {
+            // Apply inline formatting
+            let p = para
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/`(.+?)`/g, '<code>$1</code>');
+
+            // Detect if this paragraph is a list (starts with - or numbered)
+            const lines = p.split('\n');
+            const isList = lines.every(l => l.trim() === '' || /^\s*[-•]\s/.test(l) || /^\s*\d+\.\s/.test(l));
+
+            if (isList && lines.some(l => l.trim() !== '')) {
+                const items = lines
+                    .filter(l => l.trim() !== '')
+                    .map(l => l.replace(/^\s*[-•]\s*/, '').replace(/^\s*\d+\.\s*/, ''))
+                    .map(l => `<li>${l}</li>`)
+                    .join('');
+                return `<ul class="chat-list">${items}</ul>`;
+            }
+
+            // Detect if paragraph contains a question (ends with ?)
+            const hasQuestion = /\?\s*$/.test(p.trim());
+            // Single-line breaks
+            p = p.replace(/\n/g, '<br>');
+
+            if (hasQuestion) {
+                return `<div class="chat-question">${p}</div>`;
+            }
+            return `<p>${p}</p>`;
+        }).join('');
+
+        return formatted;
     }
 
     function showWelcomeIfNeeded() {
