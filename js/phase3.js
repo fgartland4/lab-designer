@@ -228,7 +228,7 @@ const Phase3 = (() => {
 
                 html += `
                     <div class="p3-lab-row${isExpanded ? ' expanded' : ''}" data-lab-id="${lab.id}" data-project-id="${project.id}">
-                        <span class="p3-lab-chevron">${isExpanded ? '&#9660;' : '&#9654;'}</span>
+                        <span class="p3-lab-chevron">${isExpanded ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>'}</span>
                         <span class="p3-lab-title">${escHtml(lab.title)}</span>
                         <span class="p3-lab-badge ${allDrafted ? 'complete' : ''}">${draftedCount}/${totalCount}</span>
                     </div>

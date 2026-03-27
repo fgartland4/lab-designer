@@ -226,7 +226,7 @@ const Phase1 = (() => {
             const isExpanded = _expandedSections.has(sec.key);
             const hasDetail = !!sec.detail;
             const statusIcon = `<span class="bp-circle ${sec.filled ? 'filled' : ''}"></span>`;
-            const chevron = hasDetail ? `<span class="bp-chevron ${isExpanded ? 'open' : ''}">\u25B6</span>` : '';
+            const chevron = hasDetail ? `<span class="bp-chevron ${isExpanded ? 'open' : ''}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>` : '';
 
             const row = document.createElement('div');
             row.className = `bp-item ${sec.filled ? 'filled' : 'empty'}`;
