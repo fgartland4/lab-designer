@@ -550,7 +550,9 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#settings-model').value = s.model || '';
         $('#settings-endpoint').value = s.customEndpoint || '';
         $('#settings-default-seat-time').value = s.defaultSeatTime || 45;
-        $('#settings-activities-per-lab').value = s.activitiesPerLab || 5;
+        const apl = s.activitiesPerLab;
+        const validApl = ['1-2', '3-5', '6-10', 'unlimited'];
+        $('#settings-activities-per-lab').value = validApl.includes(apl) ? apl : '3-5';
         $('#settings-default-difficulty').value = s.defaultDifficulty || 'intermediate';
 
         // Naming formula
@@ -715,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
         Settings.set('model', $('#settings-model').value);
         Settings.set('customEndpoint', $('#settings-endpoint').value);
         Settings.set('defaultSeatTime', parseInt($('#settings-default-seat-time').value) || 45);
-        Settings.set('activitiesPerLab', parseInt($('#settings-activities-per-lab').value) || 5);
+        Settings.set('activitiesPerLab', $('#settings-activities-per-lab').value || '3-5');
         Settings.set('defaultDifficulty', $('#settings-default-difficulty').value);
 
         // Naming formula

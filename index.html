@@ -241,22 +241,20 @@
                     <div class="view-header">
                         <h2>Settings</h2>
                     </div>
-                    <div class="settings-layout">
-                        <!-- AI Provider -->
-                        <div class="settings-section">
-                            <div class="settings-section-header">
-                                <h3>AI Provider</h3>
-                                <span class="settings-section-hint">Lab Program Designer requires an AI provider for conversational design.</span>
-                            </div>
-                            <div class="form-group">
-                                <label for="settings-ai-provider">Provider</label>
-                                <select id="settings-ai-provider">
-                                    <option value="claude">Claude API (Anthropic)</option>
-                                    <option value="openai">OpenAI API</option>
-                                    <option value="custom">Custom Endpoint</option>
-                                </select>
-                            </div>
-                            <div id="settings-ai-fields" class="settings-ai-fields">
+                    <div class="settings-grid">
+
+                        <!-- AI Provider — spans full width -->
+                        <div class="settings-section settings-full-width">
+                            <h3 class="settings-section-title">AI Provider</h3>
+                            <div class="settings-row-3">
+                                <div class="form-group">
+                                    <label for="settings-ai-provider">Provider</label>
+                                    <select id="settings-ai-provider">
+                                        <option value="claude">Claude API (Anthropic)</option>
+                                        <option value="openai">OpenAI API</option>
+                                        <option value="custom">Custom Endpoint</option>
+                                    </select>
+                                </div>
                                 <div class="form-group">
                                     <label for="settings-api-key">API Key</label>
                                     <div class="api-key-row">
@@ -264,17 +262,17 @@
                                         <button type="button" class="btn btn-outline btn-sm" id="settings-toggle-key">Show</button>
                                     </div>
                                 </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="settings-model">Model</label>
-                                        <input type="text" id="settings-model" placeholder="e.g., claude-sonnet-4-20250514">
-                                    </div>
-                                    <div class="form-group" id="settings-endpoint-group" style="display:none;">
-                                        <label for="settings-endpoint">Endpoint URL</label>
-                                        <input type="text" id="settings-endpoint" placeholder="https://your-api.example.com/v1/chat/completions">
-                                    </div>
+                                <div class="form-group">
+                                    <label for="settings-model">Model</label>
+                                    <input type="text" id="settings-model" placeholder="e.g., claude-sonnet-4-20250514">
                                 </div>
-                                <div class="form-actions" style="border:none;padding:0;margin-top:8px;">
+                            </div>
+                            <div id="settings-ai-fields" class="settings-ai-fields">
+                                <div class="form-group" id="settings-endpoint-group" style="display:none;">
+                                    <label for="settings-endpoint">Endpoint URL</label>
+                                    <input type="text" id="settings-endpoint" placeholder="https://your-api.example.com/v1/chat/completions">
+                                </div>
+                                <div class="form-actions-inline">
                                     <button type="button" class="btn btn-secondary btn-sm" id="settings-test-connection">Test Connection</button>
                                     <span id="settings-test-result" class="settings-test-result"></span>
                                 </div>
@@ -283,49 +281,36 @@
 
                         <!-- Lab Defaults -->
                         <div class="settings-section">
-                            <div class="settings-section-header">
-                                <h3>Lab Defaults</h3>
-                            </div>
-                            <div class="form-row">
+                            <h3 class="settings-section-title">Lab Defaults</h3>
+                            <div class="settings-row-3">
                                 <div class="form-group">
-                                    <label for="settings-default-seat-time">Default Seat Time (minutes)</label>
+                                    <label for="settings-default-seat-time">Seat Time (mins)</label>
                                     <input type="number" id="settings-default-seat-time" min="15" max="240" step="5" value="45">
                                 </div>
                                 <div class="form-group">
                                     <label for="settings-activities-per-lab">Activities per Lab</label>
-                                    <input type="number" id="settings-activities-per-lab" min="1" max="10" step="1" value="5">
+                                    <select id="settings-activities-per-lab">
+                                        <option value="1-2">1-2</option>
+                                        <option value="3-5" selected>3-5</option>
+                                        <option value="6-10">6-10</option>
+                                        <option value="unlimited">Unlimited</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="settings-default-difficulty">Difficulty</label>
+                                    <select id="settings-default-difficulty">
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate" selected>Intermediate</option>
+                                        <option value="advanced">Advanced</option>
+                                        <option value="expert">Expert</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label for="settings-default-difficulty">Default Difficulty</label>
-                                <select id="settings-default-difficulty">
-                                    <option value="beginner">Beginner</option>
-                                    <option value="intermediate" selected>Intermediate</option>
-                                    <option value="advanced">Advanced</option>
-                                    <option value="expert">Expert</option>
-                                </select>
-                            </div>
                         </div>
 
-                        <!-- Lab Naming Formula -->
+                        <!-- Writing -->
                         <div class="settings-section">
-                            <div class="settings-section-header">
-                                <h3>Lab Naming Formula</h3>
-                                <span class="settings-section-hint">Define the default pattern for AI-proposed lab names. Use placeholders like {Verb}, {Specific Action}, {Product Name}.</span>
-                            </div>
-                            <div class="form-group">
-                                <label for="settings-naming-formula">Formula</label>
-                                <input type="text" id="settings-naming-formula" placeholder="{Verb} {Specific Action} {Product Name}" value="{Verb} {Specific Action} {Product Name}">
-                                <span class="form-hint">Example result: "Configure Virtual Network Peering in Azure"</span>
-                            </div>
-                        </div>
-
-                        <!-- Instruction Style Guide -->
-                        <div class="settings-section">
-                            <div class="settings-section-header">
-                                <h3>Instruction Style Guide</h3>
-                                <span class="settings-section-hint">Choose a documentation style standard for generated lab instructions.</span>
-                            </div>
+                            <h3 class="settings-section-title">Writing</h3>
                             <div class="form-group">
                                 <label for="settings-style-guide">Style Guide</label>
                                 <select id="settings-style-guide">
@@ -341,13 +326,16 @@
                                 <label for="settings-custom-style-url">Custom Style Guide URL</label>
                                 <input type="text" id="settings-custom-style-url" placeholder="https://your-company.com/style-guide">
                             </div>
+                            <div class="form-group">
+                                <label for="settings-naming-formula">Lab Naming Formula</label>
+                                <input type="text" id="settings-naming-formula" placeholder="{Verb} {Specific Action} {Product Name}" value="{Verb} {Specific Action} {Product Name}">
+                                <span class="form-hint">e.g., "Configure Virtual Network Peering in Azure"</span>
+                            </div>
                         </div>
 
-                        <!-- Branding -->
+                        <!-- Branding — simplified -->
                         <div class="settings-section">
-                            <div class="settings-section-header">
-                                <h3>Branding</h3>
-                            </div>
+                            <h3 class="settings-section-title">Branding</h3>
                             <div class="form-group">
                                 <label for="settings-logo-upload">Logo</label>
                                 <div class="logo-upload-row">
@@ -355,77 +343,34 @@
                                     <div id="settings-logo-preview" class="logo-preview"></div>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label for="settings-branding-source-url">Branding Source URL</label>
-                                <input type="text" id="settings-branding-source-url" placeholder="https://your-company.com">
-                                <span class="form-hint">Enter a URL to extract color scheme, fonts, and styling for lab instructions.</span>
-                            </div>
-                            <div class="form-group">
-                                <label>Brand Colors</label>
-                                <div class="color-pickers">
-                                    <div class="color-picker-group">
-                                        <label for="settings-color-primary">Primary</label>
-                                        <input type="color" id="settings-color-primary" value="#1e40af">
-                                    </div>
-                                    <div class="color-picker-group">
-                                        <label for="settings-color-secondary">Secondary</label>
-                                        <input type="color" id="settings-color-secondary" value="#6b7280">
-                                    </div>
-                                    <div class="color-picker-group">
-                                        <label for="settings-color-accent">Accent</label>
-                                        <input type="color" id="settings-color-accent" value="#10b981">
-                                    </div>
-                                    <div class="color-picker-group">
-                                        <label for="settings-color-text">Text</label>
-                                        <input type="color" id="settings-color-text" value="#111827">
-                                    </div>
-                                    <div class="color-picker-group">
-                                        <label for="settings-color-background">Background</label>
-                                        <input type="color" id="settings-color-background" value="#ffffff">
-                                    </div>
-                                </div>
-                            </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="settings-font-heading">Heading Font</label>
-                                    <input type="text" id="settings-font-heading" placeholder="e.g., Inter, Roboto">
+                                    <label for="settings-color-primary">Primary Color</label>
+                                    <input type="color" id="settings-color-primary" value="#1e40af">
                                 </div>
                                 <div class="form-group">
-                                    <label for="settings-font-body">Body Font</label>
-                                    <input type="text" id="settings-font-body" placeholder="e.g., Inter, Open Sans">
+                                    <label for="settings-branding-source-url">Brand URL</label>
+                                    <input type="text" id="settings-branding-source-url" placeholder="https://your-company.com">
                                 </div>
                             </div>
+                            <span class="form-hint">Detailed theming and color palettes are configured in Skillable Studio.</span>
                         </div>
 
-                        <!-- Default Reference Materials -->
+                        <!-- References + Project Data — side by side -->
                         <div class="settings-section">
-                            <div class="settings-section-header">
-                                <h3>Default Reference Materials</h3>
-                                <span class="settings-section-hint">These references will be automatically included in every new project.</span>
-                            </div>
-                            <div id="settings-references-list" class="references-list"></div>
+                            <h3 class="settings-section-title">Default References</h3>
+                            <span class="settings-section-hint">Automatically included in every new project.</span>
+                            <div id="settings-references-list" class="references-list" style="margin-top:8px;"></div>
                             <div class="form-row" style="margin-top:8px;">
-                                <button type="button" class="btn btn-secondary btn-sm" id="settings-add-ref-url">+ Add URL</button>
-                                <button type="button" class="btn btn-secondary btn-sm" id="settings-add-ref-file">+ Add File</button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="settings-add-ref-url">+ URL</button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="settings-add-ref-file">+ File</button>
                                 <input type="file" id="settings-ref-file-input" accept=".txt,.md,.pdf,.docx,.json,.csv" style="display:none">
                             </div>
                         </div>
 
-                        <!-- Import/Export -->
-                        <div class="settings-section">
-                            <div class="settings-section-header">
-                                <h3>Project Data</h3>
-                            </div>
-                            <div class="form-row">
-                                <button type="button" class="btn btn-secondary btn-sm" id="settings-import-project">Import Project</button>
-                                <button type="button" class="btn btn-secondary btn-sm" id="settings-export-project">Export Project</button>
-                            </div>
-                            <input type="file" id="settings-import-file" accept=".json" style="display:none">
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-primary" id="settings-save">Save Settings</button>
-                        </div>
+                    </div>
+                    <div class="form-actions-inline" style="margin-top:16px;">
+                        <button type="button" class="btn btn-primary" id="settings-save">Save Settings</button>
                     </div>
                 </div>
             </section>
