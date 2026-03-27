@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── State ──
     let currentProject = null;
-    let currentSection = 'phase1';
+    let currentSection = 'home';
     let pendingFiles = []; // files waiting to be sent with next message (phase 1)
 
     // ── DOM helpers ──
@@ -36,10 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         Settings.load();
-        loadOrCreateProject();
 
         bindNavigation();
-        bindProjectControls();
+        bindProgramControls();
         bindChat('phase1');
         bindChat('phase2');
         bindChat('phase3');
@@ -47,9 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
         bindFileUpload();
         bindSettings();
 
-        renderAll();
-        renderChatHistory('phase1');
-        showWelcomeIfNeeded();
+        // Start on home screen
+        showHomeScreen();
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -69,8 +67,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function navigateTo(section) {
         currentSection = section;
 
+        if (section === 'home') {
+            showHomeScreen();
+            return;
+        }
+
         // Update nav active states
-        $$('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.section === section));
+        $$('#phase-nav .nav-link').forEach(l => l.classList.toggle('active', l.dataset.section === section));
+        // Also handle the settings link in sidebar-title-block
+        const settingsLink = $('.sidebar-title-block .settings-link');
+        if (settingsLink) settingsLink.classList.toggle('active', section === 'settings');
 
         // Show/hide sections
         $$('.phase-section').forEach(s => s.classList.toggle('active', s.id === `section-${section}`));
@@ -88,84 +94,155 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function showHomeScreen() {
+        currentSection = 'home';
+        currentProject = null;
+
+        // Hide program-specific sidebar elements
+        const sidebarProgram = $('#sidebar-program');
+        const phaseNav = $('#phase-nav');
+        if (sidebarProgram) sidebarProgram.style.display = 'none';
+        if (phaseNav) phaseNav.style.display = 'none';
+
+        // Clear nav active states
+        $$('#phase-nav .nav-link').forEach(l => l.classList.remove('active'));
+
+        // Show home section, hide all others
+        $$('.phase-section').forEach(s => s.classList.toggle('active', s.id === 'section-home'));
+
+        // Render program cards
+        renderHomeScreen();
+    }
+
+    function renderHomeScreen() {
+        const grid = $('#home-programs-grid');
+        if (!grid) return;
+
+        const projects = Store.listProjects();
+
+        const cards = projects.map(p => {
+            const updated = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : 'Unknown';
+            const labCount = (p.labBlueprints || []).length;
+            const meta = labCount > 0 ? `${labCount} lab${labCount !== 1 ? 's' : ''} &middot; Updated ${updated}` : `Updated ${updated}`;
+            return `
+                <div class="home-program-card" data-project-id="${p.id}">
+                    <button class="program-delete" data-delete-id="${p.id}" title="Delete program">&times;</button>
+                    <h3>${escHtml(p.name)}</h3>
+                    <div class="program-meta">${meta}</div>
+                </div>`;
+        }).join('');
+
+        const newCard = `
+            <div class="home-new-card" id="home-new-program">
+                <div class="new-card-icon">+</div>
+                <div class="new-card-text">Start New Program</div>
+            </div>`;
+
+        grid.innerHTML = cards + newCard;
+
+        // Bind card clicks
+        grid.querySelectorAll('.home-program-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                // Don't open if delete button was clicked
+                if (e.target.closest('.program-delete')) return;
+                openProgram(card.dataset.projectId);
+            });
+        });
+
+        // Bind delete buttons
+        grid.querySelectorAll('.program-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.deleteId;
+                const project = Store.getProject(id);
+                if (!project) return;
+                if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return;
+                Store.deleteProject(id);
+                renderHomeScreen();
+            });
+        });
+
+        // Bind new program card
+        const newBtn = $('#home-new-program');
+        if (newBtn) {
+            newBtn.addEventListener('click', () => {
+                const project = Store.createProject('Untitled Program');
+                openProgram(project.id);
+            });
+        }
+    }
+
+    function openProgram(projectId) {
+        Store.setActiveProject(projectId);
+        currentProject = Store.getActiveProject();
+        if (!currentProject) return;
+
+        // Show program-specific sidebar elements
+        const sidebarProgram = $('#sidebar-program');
+        const phaseNav = $('#phase-nav');
+        if (sidebarProgram) sidebarProgram.style.display = 'block';
+        if (phaseNav) phaseNav.style.display = 'block';
+
+        // Set program name
+        const nameInput = $('#program-name-input');
+        if (nameInput) nameInput.value = currentProject.name;
+
+        // Render everything and go to phase 1
+        clearAllChats();
+        renderAll();
+        restoreAllChats();
+        navigateTo('phase1');
+        showWelcomeIfNeeded();
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  Project Management
     // ══════════════════════════════════════════════════════════════
 
-    function loadOrCreateProject() {
-        currentProject = Store.getActiveProject();
-        if (!currentProject) {
-            currentProject = Store.createProject('My Lab Program');
+    function bindProgramControls() {
+        // Back to programs
+        const backBtn = $('#btn-back-to-programs');
+        if (backBtn) {
+            backBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                showHomeScreen();
+            });
         }
-        renderProjectSelector();
-    }
 
-    function loadProject(projectId) {
-        Store.setActiveProject(projectId);
-        currentProject = Store.getActiveProject();
-        clearAllChats();
-        renderAll();
-        restoreAllChats();
-        showWelcomeIfNeeded();
-    }
-
-    function createProject() {
-        const name = prompt('Project name:');
-        if (!name) return;
-        currentProject = Store.createProject(name);
-        renderProjectSelector();
-        clearAllChats();
-        renderAll();
-        showWelcomeIfNeeded();
-    }
-
-    function deleteProject() {
-        if (!currentProject) return;
-        if (!confirm(`Delete project "${currentProject.name}"? This cannot be undone.`)) return;
-        Store.deleteProject(currentProject.id);
-        currentProject = Store.getActiveProject();
-        if (!currentProject) {
-            currentProject = Store.createProject('My Lab Program');
-        }
-        renderProjectSelector();
-        clearAllChats();
-        renderAll();
-        restoreAllChats();
-        showWelcomeIfNeeded();
-    }
-
-    function renderProjectSelector() {
-        const select = $('#project-select');
-        const projects = Store.listProjects();
-        select.innerHTML = projects.map(p =>
-            `<option value="${p.id}" ${p.id === currentProject.id ? 'selected' : ''}>${escHtml(p.name)}</option>`
-        ).join('') + '<option value="__new__">+ New Project...</option>';
-    }
-
-    function bindProjectControls() {
-        $('#project-select').addEventListener('change', (e) => {
-            if (e.target.value === '__new__') {
-                createProject();
-                if (currentProject) {
-                    e.target.value = currentProject.id;
+        // Program name editing
+        const nameInput = $('#program-name-input');
+        if (nameInput) {
+            const saveName = () => {
+                if (!currentProject) return;
+                const newName = nameInput.value.trim() || 'Untitled Program';
+                nameInput.value = newName;
+                currentProject.name = newName;
+                Store.updateProject(currentProject);
+            };
+            nameInput.addEventListener('blur', saveName);
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    nameInput.blur();
                 }
-            } else {
-                loadProject(e.target.value);
-            }
-        });
-
-        $('#btn-new-project').addEventListener('click', () => createProject());
-        $('#btn-delete-project').addEventListener('click', () => deleteProject());
+            });
+        }
 
         // Sidebar export/import
-        $('#btn-export').addEventListener('click', () => exportProject());
-        $('#btn-import').addEventListener('click', () => $('#import-file').click());
-        $('#import-file').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            importProjectFromFile(file);
-            e.target.value = '';
-        });
+        const exportBtn = $('#btn-export');
+        const importBtn = $('#btn-import');
+        const importFile = $('#import-file');
+
+        if (exportBtn) exportBtn.addEventListener('click', () => exportProject());
+        if (importBtn) importBtn.addEventListener('click', () => importFile && importFile.click());
+        if (importFile) {
+            importFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                importProjectFromFile(file);
+                e.target.value = '';
+            });
+        }
     }
 
     // ══════════════════════════════════════════════════════════════

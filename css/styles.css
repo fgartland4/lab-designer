@@ -171,42 +171,172 @@ body {
     margin: 10px 0 0;
 }
 
-/* Project selector */
-.sidebar-project {
-    padding: 8px 16px 16px;
+/* Program name in sidebar */
+.sidebar-program {
+    padding: 8px 16px 12px;
+}
+
+.sidebar-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    margin-bottom: 8px;
+    transition: color var(--transition);
+}
+
+.sidebar-back-link:hover {
+    color: var(--color-primary);
+}
+
+.sidebar-program-name-row {
     display: flex;
-    gap: 6px;
     align-items: center;
 }
 
-.sidebar-project select {
-    flex: 1;
-    background: #fff;
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
+.program-name-input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    font-size: 12px;
+    padding: 6px 8px;
+    font-size: 14px;
+    font-weight: 600;
     font-family: inherit;
-    cursor: pointer;
-    transition: border-color var(--transition);
+    color: var(--color-text);
+    cursor: text;
+    transition: all var(--transition);
 }
 
-.sidebar-project select:hover {
-    border-color: var(--color-border-dark, #bbb);
+.program-name-input:hover {
+    border-color: var(--color-border);
+    background: rgba(0, 0, 0, 0.02);
 }
 
-.sidebar-project select:focus {
+.program-name-input:focus {
     border-color: var(--color-primary);
-    outline: none;
-}
-
-.sidebar-project select option {
     background: #fff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 208, 130, 0.15);
 }
 
-.sidebar-label {
-    display: none;
+/* Home screen */
+.home-screen {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 32px;
+}
+
+.home-header {
+    margin-bottom: 32px;
+}
+
+.home-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 8px;
+}
+
+.home-subtitle {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+}
+
+.home-programs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.home-program-card {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+    padding: 20px;
+    cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+}
+
+.home-program-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.home-program-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 6px;
+}
+
+.home-program-card .program-meta {
+    font-size: 12px;
+    color: var(--color-text-muted, #999);
+}
+
+.home-program-card .program-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted, #999);
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all var(--transition);
+}
+
+.home-program-card:hover .program-delete {
+    opacity: 1;
+}
+
+.home-program-card .program-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.home-new-card {
+    background: transparent;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md, 8px);
+    padding: 20px;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
+    color: var(--color-text-secondary);
+}
+
+.home-new-card:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: rgba(0, 208, 130, 0.03);
+}
+
+.home-new-card .new-card-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+    font-weight: 300;
+}
+
+.home-new-card .new-card-text {
+    font-size: 14px;
+    font-weight: 500;
 }
 
 /* Navigation */

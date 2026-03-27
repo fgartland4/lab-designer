@@ -30,20 +30,16 @@
                 <hr class="sidebar-hairline">
             </div>
 
-            <!-- Project selector -->
-            <div class="sidebar-project">
-                <label class="sidebar-label">Project</label>
-                <div class="sidebar-project-row">
-                    <select id="project-select">
-                        <option value="">New Project...</option>
-                    </select>
-                    <button class="btn btn-sm btn-ghost" id="btn-new-project" title="New Project">+</button>
-                    <button class="btn btn-sm btn-ghost btn-danger" id="btn-delete-project" title="Delete Project">&times;</button>
+            <!-- Active program name (shown when inside a program) -->
+            <div class="sidebar-program" id="sidebar-program" style="display:none;">
+                <a href="#" id="btn-back-to-programs" class="sidebar-back-link">&larr; All Programs</a>
+                <div class="sidebar-program-name-row">
+                    <input type="text" id="program-name-input" class="program-name-input" value="" placeholder="Untitled Program" title="Click to rename">
                 </div>
             </div>
 
-            <!-- Phase navigation -->
-            <nav>
+            <!-- Phase navigation (hidden until a program is selected) -->
+            <nav id="phase-nav" style="display:none;">
                 <ul id="nav-list">
                     <li>
                         <a href="#" data-section="phase1" class="nav-link active">
@@ -98,8 +94,21 @@
         <!-- Main Content Area -->
         <main id="main-content">
 
+            <!-- ==================== HOME: Program Selection ==================== -->
+            <section id="section-home" class="phase-section active">
+                <div class="home-screen">
+                    <div class="home-header">
+                        <h2>Your Programs</h2>
+                        <p class="home-subtitle">Select an existing program to continue, or start a new one.</p>
+                    </div>
+                    <div class="home-programs" id="home-programs-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+
             <!-- ==================== PHASE 1: Audiences & Objectives ==================== -->
-            <section id="section-phase1" class="phase-section active">
+            <section id="section-phase1" class="phase-section">
                 <div class="phase-layout">
                     <!-- Chat Panel (left, 60%) -->
                     <div class="chat-panel">
