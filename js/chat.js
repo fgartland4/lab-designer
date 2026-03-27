@@ -1,242 +1,404 @@
 /**
- * chat.js — Chat engine for Lab Designer v2.
- * Handles AI conversations for each phase with phase-specific system prompts.
+ * chat.js — Chat engine for Lab Designer v3.
+ * Handles AI conversations across 4 phases with phase-specific system prompts,
+ * context injection from prior phases, and structured output parsing.
+ *
+ * Depends on: Store, Settings, Catalog, Frameworks (all global IIFEs).
  */
 
 const Chat = (() => {
 
-    // ── System prompts per phase ──
+    // ── Phase key mapping ───────────────────────────────────────
 
-    const SYSTEM_PROMPTS = {
-        define: `You are an expert instructional designer helping a program designer plan a hands-on lab training program.
-
-The program designer works at a technology company (like NVIDIA, Commvault, Microsoft, Tableau, etc.) and is building customer and partner enablement programs focused on using specific software applications, platforms, and services to design, implement, deploy, and troubleshoot systems.
-
-Your role in this phase is to help them DEFINE what their learners need to be able to do on the job. Help them:
-1. Articulate target audience roles and responsibilities
-2. Extract job tasks and performance objectives from uploaded documents or conversation
-3. Identify business objectives driving the training need
-4. Clarify the technology stack and tools involved
-
-Be conversational and ask clarifying questions. When you have enough information, provide a structured summary of goals.
-
-When you have gathered sufficient information, include a JSON block in your response wrapped in ===GOALS_SUMMARY=== markers like this:
-===GOALS_SUMMARY===
-{
-  "programName": "...",
-  "targetAudience": "...",
-  "technology": "...",
-  "goals": ["goal 1", "goal 2", ...],
-  "jobTasks": ["task 1", "task 2", ...],
-  "businessObjectives": ["obj 1", "obj 2", ...]
-}
-===GOALS_SUMMARY===
-
-Only include this block when you feel confident you have enough information. Continue the conversation naturally otherwise.`,
-
-        organize: `You are an expert instructional designer helping organize training content into a structured curriculum.
-
-Based on the program goals defined earlier, help the program designer organize content into:
-- Courses (high-level groupings)
-- Modules (major sections within a course)
-- Lessons (specific learning units)
-- Topics (discrete concepts within a lesson)
-
-Also help them:
-- Map content to a skill framework if they've selected one
-- Identify WHERE each hands-on lab should be embedded in the curriculum
-- Recommend lab names and general activity outlines
-- Each lab should take learners 45-90 minutes to complete
-- Each lab should have 3-5 Activities (Skillable Activities), where each Activity is a set of tasks
-- Activities can be scored to track learner progress and expertise
-
-When you generate or update the curriculum structure, include it in a JSON block:
-===CURRICULUM===
-{
-  "courses": [
-    {
-      "title": "Course Name",
-      "modules": [
-        {
-          "title": "Module Name",
-          "lessons": [
-            {
-              "title": "Lesson Name",
-              "topics": ["Topic 1", "Topic 2"],
-              "lab": {
-                "title": "Lab: Hands-on Lab Name",
-                "description": "Brief description of what learner does",
-                "duration": 60,
-                "activities": [
-                  {
-                    "title": "Activity 1: Setup and Configuration",
-                    "scored": true,
-                    "tasks": ["Task description 1", "Task description 2"]
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-===CURRICULUM===
-
-Not every lesson needs a lab. Labs should be placed where hands-on practice is most valuable. Be helpful when the designer wants to consolidate, rename, or reorganize items.`,
-
-        labs: `You are an expert instructional designer and lab environment architect helping finalize Lab Blueprints.
-
-Based on the curriculum and lab placements from Phase 2, help the program designer:
-
-1. Refine each Lab Blueprint with detailed activities and tasks
-2. Ensure labs are 45-90 minutes with 3-5 scored Activities each
-3. Create Environment Templates (Bill of Materials) — reusable environment configurations that labs share:
-   - Virtual machines with specific OS and software
-   - Cloud subscriptions and services (Azure, AWS, GCP)
-   - Licenses and permissions required
-   - Pre-configured dummy/sample data
-   - Network configurations and security settings
-   - Any pre-installed tools or SDKs
-
-KEY CONCEPT: Each lab program should use ONE or a FEW highly reusable environment templates. Individual labs use the same template — the environment is the hardest part, so reusability is critical.
-
-When you generate or update lab blueprints, include them in a JSON block:
-===LAB_BLUEPRINTS===
-{
-  "environmentTemplates": [
-    {
-      "id": "env-1",
-      "name": "Template Name",
-      "description": "What this environment provides",
-      "virtualMachines": [
-        { "name": "VM Name", "os": "Windows Server 2022", "software": ["SQL Server", "IIS"], "ram": "8GB", "cpu": 4 }
-      ],
-      "cloudServices": [
-        { "provider": "azure", "services": ["App Service", "SQL Database", "Storage Account"] }
-      ],
-      "licenses": ["License 1"],
-      "networking": "Description of network setup",
-      "sampleData": "Description of pre-loaded data",
-      "credentials": "How credentials are provisioned"
-    }
-  ],
-  "labBlueprints": [
-    {
-      "id": "lab-1",
-      "title": "Lab Name",
-      "description": "What the learner accomplishes",
-      "duration": 60,
-      "environmentTemplate": "env-1",
-      "placement": "Course > Module > Lesson",
-      "activities": [
-        {
-          "title": "Activity Name",
-          "description": "What this activity covers",
-          "scored": true,
-          "estimatedMinutes": 15,
-          "tasks": [
-            { "description": "Task description", "scorable": true, "scoreMethod": "resource-validation" }
-          ]
-        }
-      ]
-    }
-  ]
-}
-===LAB_BLUEPRINTS===
-
-Help the designer think through environment reusability. Suggest consolidation where possible.`
+    const PHASE_KEYS = {
+        1: 'phase1',
+        2: 'phase2',
+        3: 'phase3',
+        4: 'phase4',
     };
 
-    // ── Build messages array for AI call ──
-    function buildMessages(phase, project, userMessage) {
-        const messages = [{ role: 'system', content: SYSTEM_PROMPTS[phase] }];
+    function getPhaseKey(phase) {
+        return PHASE_KEYS[phase] || `phase${phase}`;
+    }
 
-        // Add context from earlier phases
-        if (phase === 'organize' || phase === 'labs') {
-            if (project.goals && project.goals.length > 0) {
-                messages.push({
-                    role: 'system',
-                    content: `Program context from Phase 1:\n- Goals: ${project.goals.join('; ')}\n- Uploads: ${project.uploads.map(u => u.name).join(', ') || 'none'}`
-                });
+    // ── Structured output markers ───────────────────────────────
+
+    const MARKERS = {
+        1: { start: '===GOALS_SUMMARY===',      end: '===END_GOALS_SUMMARY===' },
+        2: { start: '===CURRICULUM===',          end: '===END_CURRICULUM===' },
+        3: [
+            { start: '===LAB_BLUEPRINTS===',      end: '===END_LAB_BLUEPRINTS===' },
+            { start: '===DRAFT_INSTRUCTIONS===',   end: '===END_DRAFT_INSTRUCTIONS===' },
+        ],
+        4: { start: '===ENVIRONMENT===',          end: '===END_ENVIRONMENT===' },
+    };
+
+    // ── System prompt builders ──────────────────────────────────
+
+    function buildSystemPrompt(phase, context) {
+        const seatTime = context.seatTime || Settings.get('defaultSeatTime') || 45;
+        let prompt = '';
+
+        switch (phase) {
+            case 1:
+                prompt = _phase1Prompt();
+                break;
+            case 2:
+                prompt = _phase2Prompt(seatTime, context);
+                break;
+            case 3:
+                prompt = _phase3Prompt(seatTime, context);
+                break;
+            case 4:
+                prompt = _phase4Prompt(context);
+                break;
+            default:
+                throw new Error(`Unknown phase: ${phase}`);
+        }
+
+        return prompt;
+    }
+
+    function _phase1Prompt() {
+        return `You are an expert instructional designer. Help the user define their target audiences, business objectives, and learning objectives. When they upload documents (JTAs, job descriptions, task lists), extract competencies and organize them. Ask clarifying questions about who the learners are, what they need to do on the job, and what success looks like. When you have enough info, output a structured block:
+\`\`\`
+===GOALS_SUMMARY===
+{ "audiences": [...], "businessObjectives": [...], "learningObjectives": [...], "competencies": [...] }
+===END_GOALS_SUMMARY===
+\`\`\`
+
+Only include this block when you feel confident you have enough information. Continue the conversation naturally otherwise.`;
+    }
+
+    function _phase2Prompt(seatTime, context) {
+        let prompt = `You are an expert curriculum architect. Based on the objectives and competencies from Phase 1, design a curriculum hierarchy (Courses > Modules > Lessons > Topics). Recommend where hands-on labs should be placed. Each lab should target ${seatTime} minutes of seat time.`;
+
+        if (context.frameworkId) {
+            prompt += ` When a skill framework is selected, map curriculum items to framework competencies.`;
+        }
+
+        prompt += ` Consider the built-in knowledge base for lab templates and environment presets. Output:
+\`\`\`
+===CURRICULUM===
+{ "courses": [{ "title": "...", "modules": [{ "title": "...", "lessons": [{ "title": "...", "topics": [...], "lab": { "name": "...", "rationale": "...", "estimatedDuration": 0 } | null }] }] }] }
+===END_CURRICULUM===
+\`\`\`
+
+Not every lesson needs a lab. Labs should be placed where hands-on practice is most valuable. Be helpful when the designer wants to consolidate, rename, or reorganize items.`;
+
+        return prompt;
+    }
+
+    function _phase3Prompt(seatTime, context) {
+        let prompt = `You are an expert lab designer for Skillable. Help finalize lab blueprints. For each lab, confirm the title, write a short description (2-3 sentences), and outline activities (each activity has a title, tasks list, and estimated duration). Activities should have clear action-oriented titles. When asked, generate DRAFT instructions in markdown format with step-by-step guidance. Default lab duration is ${seatTime} minutes. Output:
+\`\`\`
+===LAB_BLUEPRINTS===
+[{ "id": "...", "title": "...", "shortDescription": "...", "estimatedDuration": 0, "activities": [{ "title": "...", "tasks": [...], "duration": 0 }] }]
+===END_LAB_BLUEPRINTS===
+\`\`\`
+
+And for draft instructions:
+\`\`\`
+===DRAFT_INSTRUCTIONS===
+{ "labId": "...", "markdown": "..." }
+===END_DRAFT_INSTRUCTIONS===
+\`\`\``;
+
+        // Inject branding context for instruction generation
+        const branding = _getBrandingContext();
+        if (branding) {
+            prompt += `\n\nBranding guidelines for generated instructions:\n${branding}`;
+        }
+
+        return prompt;
+    }
+
+    function _phase4Prompt(context) {
+        return `You are an expert cloud/lab environment architect for Skillable. Design environment templates, generate bills of materials, and write lifecycle scripts. For each lab or group of labs, specify: VMs needed (OS, RAM, software), cloud resources (subscriptions, resource groups), credentials, dummy/practice data files to generate, required licenses. Write platform-specific PowerShell or Bash lifecycle scripts for provisioning. Output:
+\`\`\`
+===ENVIRONMENT===
+{ "templates": [...], "billOfMaterials": [...], "lifecycleScripts": { "templateId": { "platform": "...", "buildScript": "...", "teardownScript": "..." } } }
+===END_ENVIRONMENT===
+\`\`\`
+
+Focus on environment reusability. Multiple labs should share the same environment template whenever possible — the environment is the hardest part, so reusability is critical.`;
+    }
+
+    // ── Context helpers ─────────────────────────────────────────
+
+    function _getBrandingContext() {
+        const parts = [];
+        const logoUrl = Settings.get('logoUrl');
+        const colors = Settings.get('brandColors');
+        const fonts = Settings.get('brandFonts');
+
+        if (logoUrl) parts.push(`Logo URL: ${logoUrl}`);
+        if (colors) {
+            const entries = Object.entries(colors).filter(([, v]) => v);
+            if (entries.length) {
+                parts.push('Brand colors: ' + entries.map(([k, v]) => `${k}: ${v}`).join(', '));
+            }
+        }
+        if (fonts) {
+            const entries = Object.entries(fonts).filter(([, v]) => v);
+            if (entries.length) {
+                parts.push('Brand fonts: ' + entries.map(([k, v]) => `${k}: ${v}`).join(', '));
             }
         }
 
-        if (phase === 'labs' && project.curriculum) {
-            messages.push({
-                role: 'system',
-                content: `Curriculum structure from Phase 2:\n${JSON.stringify(project.curriculum, null, 2)}`
-            });
+        return parts.length ? parts.join('\n') : null;
+    }
+
+    function _getGoalsSummaryContext(project) {
+        const parts = [];
+
+        if (project.audiences && project.audiences.length) {
+            parts.push('Target audiences: ' + project.audiences.map(a => a.role).join(', '));
+        }
+        if (project.businessObjectives && project.businessObjectives.length) {
+            parts.push('Business objectives: ' + project.businessObjectives.join('; '));
+        }
+        if (project.learningObjectives && project.learningObjectives.length) {
+            parts.push('Learning objectives: ' + project.learningObjectives.join('; '));
+        }
+        if (project.competencies && project.competencies.length) {
+            parts.push('Competencies: ' + project.competencies.map(c => c.name).join(', '));
         }
 
-        // Add upload content for Define phase
-        if (phase === 'define' && project.uploads && project.uploads.length > 0) {
-            const uploadContext = project.uploads
-                .filter(u => u.content)
-                .map(u => `--- ${u.name} ---\n${u.content}`)
-                .join('\n\n');
-            if (uploadContext) {
-                messages.push({
-                    role: 'system',
-                    content: `The program designer has uploaded these documents:\n\n${uploadContext}`
-                });
+        return parts.length ? parts.join('\n') : null;
+    }
+
+    function _getFrameworkContext(project) {
+        if (!project.framework) return null;
+
+        try {
+            const fw = Frameworks.getById(project.framework);
+            if (!fw) return null;
+            const lines = [`Skill framework: ${fw.name}`];
+            if (fw.domains && fw.domains.length) {
+                lines.push('Domains: ' + fw.domains.map(d => d.name).join(', '));
             }
+            if (project.frameworkData) {
+                lines.push('Framework mapping data: ' + JSON.stringify(project.frameworkData));
+            }
+            return lines.join('\n');
+        } catch {
+            return null;
         }
+    }
 
-        // Add chat history
-        const history = project[phase + 'Chat'] || [];
-        history.forEach(msg => {
+    function _getCatalogContext() {
+        try {
+            if (typeof Catalog !== 'undefined' && typeof Catalog.toPromptContext === 'function') {
+                return Catalog.toPromptContext();
+            }
+            // Fallback: build a lightweight summary from Catalog.getDomains()
+            if (typeof Catalog !== 'undefined' && typeof Catalog.getDomains === 'function') {
+                const domains = Catalog.getDomains();
+                if (domains && domains.length) {
+                    const summary = domains.map(d => {
+                        const skills = d.skills ? d.skills.map(s => s.name).join(', ') : '';
+                        return `${d.name}: ${skills}`;
+                    }).join('\n');
+                    return `Available skill domains and lab templates:\n${summary}`;
+                }
+            }
+        } catch {
+            // Catalog not available, no context to inject
+        }
+        return null;
+    }
+
+    // ── Message assembly ────────────────────────────────────────
+
+    function buildMessages(phase, projectId) {
+        const project = Store.getProject(projectId);
+        if (!project) throw new Error(`Project not found: ${projectId}`);
+
+        const context = {
+            seatTime: project.seatTime
+                ? `${project.seatTime.min}-${project.seatTime.max}`
+                : Settings.get('defaultSeatTime') || 45,
+            frameworkId: project.framework,
+        };
+
+        const messages = [];
+
+        // System prompt
+        messages.push({ role: 'system', content: buildSystemPrompt(phase, context) });
+
+        // Context from prior phases
+        _injectPhaseContext(messages, phase, project);
+
+        // Chat history
+        const phaseKey = getPhaseKey(phase);
+        const history = Store.getChatHistory(projectId, phaseKey);
+        for (const msg of history) {
             messages.push({ role: msg.role, content: msg.content });
-        });
-
-        // Add current message
-        messages.push({ role: 'user', content: userMessage });
+        }
 
         return messages;
     }
 
-    // ── Send message and get response ──
-    async function send(phase, project, userMessage) {
-        const messages = buildMessages(phase, project, userMessage);
+    function _injectPhaseContext(messages, phase, project) {
+        // Phase 1 uploads context (always available in phase 1 itself)
+        if (phase === 1 && project.uploads && project.uploads.length) {
+            const uploadContent = project.uploads
+                .filter(u => u.content)
+                .map(u => `--- ${u.name} ---\n${u.content}`)
+                .join('\n\n');
+            if (uploadContent) {
+                messages.push({
+                    role: 'system',
+                    content: `The user has uploaded these documents:\n\n${uploadContent}`,
+                });
+            }
+        }
+
+        // Phase 2 gets: Phase 1 goals, framework, catalog
+        if (phase >= 2) {
+            const goals = _getGoalsSummaryContext(project);
+            if (goals) {
+                messages.push({
+                    role: 'system',
+                    content: `Context from Phase 1 (Audiences & Objectives):\n${goals}`,
+                });
+            }
+        }
+
+        // Framework context for phases 2+
+        if (phase >= 2) {
+            const fw = _getFrameworkContext(project);
+            if (fw) {
+                messages.push({ role: 'system', content: fw });
+            }
+        }
+
+        // Catalog knowledge base for phases 2 and 4
+        if (phase === 2 || phase === 4) {
+            const catalog = _getCatalogContext();
+            if (catalog) {
+                messages.push({ role: 'system', content: catalog });
+            }
+        }
+
+        // Phase 3 gets: Phase 2 curriculum
+        if (phase >= 3 && project.curriculum) {
+            messages.push({
+                role: 'system',
+                content: `Curriculum structure from Phase 2 (Design & Configure):\n${JSON.stringify(project.curriculum, null, 2)}`,
+            });
+        }
+
+        // Phase 4 gets: Phase 3 blueprints
+        if (phase >= 4 && project.labBlueprints && project.labBlueprints.length) {
+            messages.push({
+                role: 'system',
+                content: `Lab blueprints from Phase 3 (Organize & Finalize):\n${JSON.stringify(project.labBlueprints, null, 2)}`,
+            });
+        }
+    }
+
+    // ── Send message ────────────────────────────────────────────
+
+    async function sendMessage(phase, projectId, userMessage) {
+        const messages = buildMessages(phase, projectId);
+
+        // Append the new user message
+        messages.push({ role: 'user', content: userMessage });
+
+        // Persist the user message
+        const phaseKey = getPhaseKey(phase);
+        Store.addChatMessage(projectId, phaseKey, 'user', userMessage);
+
+        // Call the AI
         const response = await Settings.callAI(messages, { maxTokens: 4096 });
-        return response;
+
+        // Persist the assistant response
+        Store.addChatMessage(projectId, phaseKey, 'assistant', response);
+
+        // Parse structured data if present
+        const structured = parseStructuredData(response, phase);
+
+        return {
+            raw: response,
+            display: cleanResponse(response),
+            structured,
+        };
     }
 
-    // ── Parse structured data from AI responses ──
-    function parseGoalsSummary(text) {
-        const match = text.match(/===GOALS_SUMMARY===([\s\S]*?)===GOALS_SUMMARY===/);
+    // ── Structured data parsing ─────────────────────────────────
+
+    function parseStructuredData(text, phase) {
+        switch (phase) {
+            case 1:
+                return _extractBlock(text, MARKERS[1].start, MARKERS[1].end);
+            case 2:
+                return _extractBlock(text, MARKERS[2].start, MARKERS[2].end);
+            case 3: {
+                const blueprints = _extractBlock(text, MARKERS[3][0].start, MARKERS[3][0].end);
+                const draft = _extractBlock(text, MARKERS[3][1].start, MARKERS[3][1].end);
+                if (!blueprints && !draft) return null;
+                return { blueprints, draftInstructions: draft };
+            }
+            case 4:
+                return _extractBlock(text, MARKERS[4].start, MARKERS[4].end);
+            default:
+                return null;
+        }
+    }
+
+    function _extractBlock(text, startMarker, endMarker) {
+        const pattern = new RegExp(
+            _escapeRegex(startMarker) + '([\\s\\S]*?)' + _escapeRegex(endMarker)
+        );
+        const match = text.match(pattern);
         if (!match) return null;
-        try { return JSON.parse(match[1].trim()); } catch { return null; }
+
+        try {
+            return JSON.parse(match[1].trim());
+        } catch {
+            console.warn('[Chat] Failed to parse structured block between', startMarker, 'and', endMarker);
+            return null;
+        }
     }
 
-    function parseCurriculum(text) {
-        const match = text.match(/===CURRICULUM===([\s\S]*?)===CURRICULUM===/);
-        if (!match) return null;
-        try { return JSON.parse(match[1].trim()); } catch { return null; }
+    function _escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    function parseLabBlueprints(text) {
-        const match = text.match(/===LAB_BLUEPRINTS===([\s\S]*?)===LAB_BLUEPRINTS===/);
-        if (!match) return null;
-        try { return JSON.parse(match[1].trim()); } catch { return null; }
+    // ── Clean response for display ──────────────────────────────
+
+    function cleanResponse(text) {
+        let cleaned = text;
+
+        // Remove all known marker blocks
+        const allMarkers = [
+            MARKERS[1],
+            MARKERS[2],
+            ...MARKERS[3],
+            MARKERS[4],
+        ];
+
+        for (const m of allMarkers) {
+            const pattern = new RegExp(
+                _escapeRegex(m.start) + '[\\s\\S]*?' + _escapeRegex(m.end),
+                'g'
+            );
+            cleaned = cleaned.replace(pattern, '');
+        }
+
+        return cleaned.trim();
     }
 
-    // ── Strip markers from display text ──
-    function cleanResponseForDisplay(text) {
-        return text
-            .replace(/===GOALS_SUMMARY===[\s\S]*?===GOALS_SUMMARY===/g, '')
-            .replace(/===CURRICULUM===[\s\S]*?===CURRICULUM===/g, '')
-            .replace(/===LAB_BLUEPRINTS===[\s\S]*?===LAB_BLUEPRINTS===/g, '')
-            .trim();
-    }
+    // ── Public API ──────────────────────────────────────────────
 
     return {
-        send,
-        parseGoalsSummary,
-        parseCurriculum,
-        parseLabBlueprints,
-        cleanResponseForDisplay,
-        SYSTEM_PROMPTS,
+        buildSystemPrompt,
+        buildMessages,
+        sendMessage,
+        parseStructuredData,
+        cleanResponse,
+        getPhaseKey,
     };
 })();
