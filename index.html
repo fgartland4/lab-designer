@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=5">
+    <link rel="stylesheet" href="css/styles.css?v=6">
 </head>
 <body>
     <div id="app">
@@ -320,6 +320,22 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="form-group" style="margin-top:12px;">
+                                <label>Logo</label>
+                                <div class="logo-dropzone" id="settings-logo-dropzone">
+                                    <div id="settings-logo-preview" class="logo-preview"></div>
+                                    <div class="logo-dropzone-prompt" id="settings-logo-prompt">
+                                        <span class="logo-dropzone-icon">+</span>
+                                        <span>Click or drag to upload</span>
+                                    </div>
+                                    <input type="file" id="settings-logo-upload" accept="image/*">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="settings-branding-source-url">Brand URL</label>
+                                <input type="text" id="settings-branding-source-url" placeholder="https://your-company.com">
+                            </div>
+                            <span class="form-hint">Detailed theming, color palettes, and fonts are configured in Skillable Studio.</span>
                         </div>
 
                         <!-- Writing -->
@@ -347,30 +363,7 @@
                             </div>
                         </div>
 
-                        <!-- Branding — simplified -->
-                        <div class="settings-section">
-                            <h3 class="settings-section-title">Branding</h3>
-                            <div class="form-group">
-                                <label for="settings-logo-upload">Logo</label>
-                                <div class="logo-upload-row">
-                                    <input type="file" id="settings-logo-upload" accept="image/*">
-                                    <div id="settings-logo-preview" class="logo-preview"></div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="settings-color-primary">Primary Color</label>
-                                    <input type="color" id="settings-color-primary" value="#1e40af">
-                                </div>
-                                <div class="form-group">
-                                    <label for="settings-branding-source-url">Brand URL</label>
-                                    <input type="text" id="settings-branding-source-url" placeholder="https://your-company.com">
-                                </div>
-                            </div>
-                            <span class="form-hint">Detailed theming and color palettes are configured in Skillable Studio.</span>
-                        </div>
-
-                        <!-- References + Project Data — side by side -->
+                        <!-- References -->
                         <div class="settings-section">
                             <h3 class="settings-section-title">Default References</h3>
                             <span class="settings-section-hint">Automatically included in every new project.</span>
@@ -404,18 +397,18 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="js/markdown.js?v=5"></script>
-    <script src="js/frameworks.js?v=5"></script>
-    <script src="js/catalog.js?v=5"></script>
-    <script src="js/store.js?v=5"></script>
-    <script src="js/settings.js?v=5"></script>
-    <script src="js/chat.js?v=5"></script>
-    <script src="js/exporter.js?v=5"></script>
-    <script src="js/phase1.js?v=5"></script>
-    <script src="js/phase2.js?v=5"></script>
-    <script src="js/studio-features.js?v=5"></script>
-    <script src="js/phase3.js?v=5"></script>
-    <script src="js/phase4.js?v=5"></script>
-    <script src="js/app.js?v=5"></script>
+    <script src="js/markdown.js?v=6"></script>
+    <script src="js/frameworks.js?v=6"></script>
+    <script src="js/catalog.js?v=6"></script>
+    <script src="js/store.js?v=6"></script>
+    <script src="js/settings.js?v=6"></script>
+    <script src="js/chat.js?v=6"></script>
+    <script src="js/exporter.js?v=6"></script>
+    <script src="js/phase1.js?v=6"></script>
+    <script src="js/phase2.js?v=6"></script>
+    <script src="js/studio-features.js?v=6"></script>
+    <script src="js/phase3.js?v=6"></script>
+    <script src="js/phase4.js?v=6"></script>
+    <script src="js/app.js?v=6"></script>
 </body>
 </html>

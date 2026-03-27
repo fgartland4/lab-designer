@@ -3178,6 +3178,60 @@ body {
     margin-left: 4px;
 }
 
+/* Logo dropzone */
+.logo-dropzone {
+    position: relative;
+    border: 2px dashed var(--color-border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: var(--color-bg);
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-dropzone:hover,
+.logo-dropzone.dragover {
+    border-color: var(--color-primary);
+    background: rgba(0, 208, 130, 0.04);
+}
+
+.logo-dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.logo-dropzone-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
+.logo-dropzone-icon {
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--color-text-light);
+    line-height: 1;
+}
+
+.logo-dropzone .logo-preview img {
+    max-height: 48px;
+    max-width: 100%;
+}
+
+.logo-dropzone.has-logo .logo-dropzone-prompt {
+    display: none;
+}
+
 /* ===== 27. Forms ===== */
 .form-group {
     margin-bottom: 14px;

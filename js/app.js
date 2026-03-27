@@ -597,16 +597,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Branding
         const brandUrl = $('#settings-branding-source-url');
         if (brandUrl) brandUrl.value = s.brandingSourceUrl || '';
-        const colorPrimary = $('#settings-color-primary');
-        if (colorPrimary && s.brandColors?.primary) colorPrimary.value = s.brandColors.primary;
-
         // Logo preview
         const logoPreview = $('#settings-logo-preview');
+        const dropzone = $('#settings-logo-dropzone');
         if (logoPreview) {
             if (s.logoUrl) {
-                logoPreview.innerHTML = `<img src="${escHtml(s.logoUrl)}" alt="Logo preview" style="max-height:60px;">`;
+                logoPreview.innerHTML = `<img src="${escHtml(s.logoUrl)}" alt="Logo preview">`;
+                if (dropzone) dropzone.classList.add('has-logo');
             } else {
                 logoPreview.innerHTML = '';
+                if (dropzone) dropzone.classList.remove('has-logo');
             }
         }
 
@@ -675,19 +675,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 600));
         }
 
-        // Logo upload
-        $('#settings-logo-upload').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        // Logo upload + drag-drop
+        const logoDropzone = $('#settings-logo-dropzone');
+        const logoInput = $('#settings-logo-upload');
+        function handleLogoFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
             const reader = new FileReader();
             reader.onload = (ev) => {
                 Settings.set('logoUrl', ev.target.result);
                 const preview = $('#settings-logo-preview');
-                preview.innerHTML = `<img src="${escHtml(ev.target.result)}" alt="Logo preview" style="max-height:60px;">`;
+                preview.innerHTML = `<img src="${escHtml(ev.target.result)}" alt="Logo preview">`;
+                if (logoDropzone) logoDropzone.classList.add('has-logo');
+                _flashSaved();
             };
             reader.readAsDataURL(file);
-            e.target.value = '';
-        });
+        }
+        if (logoInput) {
+            logoInput.addEventListener('change', (e) => {
+                handleLogoFile(e.target.files[0]);
+                e.target.value = '';
+            });
+        }
+        if (logoDropzone) {
+            logoDropzone.addEventListener('dragover', (e) => { e.preventDefault(); logoDropzone.classList.add('dragover'); });
+            logoDropzone.addEventListener('dragleave', () => logoDropzone.classList.remove('dragover'));
+            logoDropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                logoDropzone.classList.remove('dragover');
+                handleLogoFile(e.dataTransfer.files[0]);
+            });
+        }
 
         // Add reference URL
         $('#settings-add-ref-url').addEventListener('click', () => {
@@ -782,8 +799,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const brandUrl = $('#settings-branding-source-url');
         if (brandUrl) Settings.set('brandingSourceUrl', brandUrl.value);
-        const colorPrimary = $('#settings-color-primary');
-        if (colorPrimary) Settings.set('brandColors', { primary: colorPrimary.value });
         Settings.save();
     }
 
