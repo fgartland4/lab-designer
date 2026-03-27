@@ -28,13 +28,12 @@
     --color-surface: #ffffff;
 
     /* Sidebar — Skillable dark green with grid */
-    --color-sidebar: #0d3328;
-    --color-sidebar-dark: #0a2a21;
-    --color-sidebar-hover: #164a3a;
+    --color-sidebar: #003325;
+    --color-sidebar-hover: #004d38;
     --color-sidebar-active: #00D082;
     --color-sidebar-text: rgba(255, 255, 255, 0.85);
     --color-sidebar-text-muted: rgba(255, 255, 255, 0.45);
-    --color-sidebar-grid: rgba(255, 255, 255, 0.06);
+    --color-sidebar-grid: rgba(255, 255, 255, 0.05);
     --sidebar-width: 280px;
 
     /* Text */
@@ -103,7 +102,8 @@ body {
     background-image:
         linear-gradient(var(--color-sidebar-grid) 1px, transparent 1px),
         linear-gradient(90deg, var(--color-sidebar-grid) 1px, transparent 1px);
-    background-size: 32px 32px;
+    background-size: 18px 18px;
+    background-position: 0 0;
     color: var(--color-sidebar-text);
     display: flex;
     flex-direction: column;
