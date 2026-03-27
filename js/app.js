@@ -661,14 +661,24 @@ document.addEventListener('DOMContentLoaded', () => {
             resultEl.style.color = result.ok ? '#10b981' : '#ef4444';
         });
 
-        // Save
+        // Save button
         $('#settings-save').addEventListener('click', () => {
             saveSettings();
-            const resultEl = $('#settings-test-result');
-            resultEl.textContent = 'Settings saved!';
-            resultEl.style.color = '#10b981';
-            setTimeout(() => { resultEl.textContent = ''; }, 2000);
+            _flashSaved();
         });
+
+        // Auto-save on any change
+        const settingsSection = $('#section-settings');
+        if (settingsSection) {
+            settingsSection.addEventListener('change', () => {
+                saveSettings();
+                _flashSaved();
+            });
+            settingsSection.addEventListener('input', _debounce(() => {
+                saveSettings();
+                _flashSaved();
+            }, 600));
+        }
 
         // Logo upload
         $('#settings-logo-upload').addEventListener('change', (e) => {
@@ -738,6 +748,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (settingsExportBtn) {
             settingsExportBtn.addEventListener('click', () => exportProject());
         }
+    }
+
+    function _flashSaved() {
+        const btn = $('#settings-save');
+        if (!btn) return;
+        btn.textContent = 'Saved!';
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+            btn.textContent = 'Save Settings';
+            btn.style.background = '';
+        }, 1500);
+    }
+
+    function _debounce(fn, ms) {
+        let timer;
+        return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
     }
 
     function saveSettings() {
