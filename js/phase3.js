@@ -29,6 +29,10 @@ const Phase3 = (() => {
 
     // ── Init ─────────────────────────────────────────────────────
 
+    // Track which lab is expanded and which activity page is shown
+    let _expandedLabId = null;
+    let _currentPageIndex = 0; // index into the lab's activities array
+
     function init() {
         const container = $('#phase3-context');
         if (!container) return;
@@ -36,36 +40,36 @@ const Phase3 = (() => {
         container.addEventListener('click', (e) => {
             const target = e.target;
 
-            // Toggle lab expand/collapse
-            const labToggle = target.closest('.phase3-lab-toggle');
-            if (labToggle) {
-                const labCard = labToggle.closest('.phase3-lab-card');
-                if (labCard) {
-                    const body = labCard.querySelector('.phase3-lab-body');
-                    if (body) {
-                        const isOpen = body.style.display !== 'none';
-                        body.style.display = isOpen ? 'none' : '';
-                        labToggle.classList.toggle('expanded', !isOpen);
-                    }
+            // Click a lab row to expand/collapse its instructions view
+            const labRow = target.closest('.phase3-lab-row');
+            if (labRow) {
+                const labId = labRow.dataset.labId;
+                const projectId = labRow.dataset.projectId;
+                if (_expandedLabId === labId) {
+                    _expandedLabId = null; // collapse
+                } else {
+                    _expandedLabId = labId;
+                    _currentPageIndex = 0;
                 }
+                render(Store.getProject(projectId));
                 return;
             }
 
-            // Generate instructions for an activity
-            const genBtn = target.closest('[data-generate-activity-instructions]');
-            if (genBtn) {
-                handleGenerateActivityInstructions(
-                    genBtn.dataset.labId,
-                    genBtn.dataset.activityId,
-                    genBtn.dataset.projectId
-                );
+            // Pagination: prev/next activity page
+            const pageBtn = target.closest('[data-page-dir]');
+            if (pageBtn) {
+                const dir = parseInt(pageBtn.dataset.pageDir, 10);
+                const total = parseInt(pageBtn.dataset.pageTotal, 10);
+                _currentPageIndex = Math.max(0, Math.min(_currentPageIndex + dir, total - 1));
+                render(Store.getProject(pageBtn.dataset.projectId));
                 return;
             }
 
-            // Generate all instructions for a lab
-            const genAllBtn = target.closest('[data-generate-lab-instructions]');
-            if (genAllBtn) {
-                handleGenerateLabInstructions(genAllBtn.dataset.labId, genAllBtn.dataset.projectId);
+            // Page dot click — jump to specific page
+            const pageDot = target.closest('[data-page-jump]');
+            if (pageDot) {
+                _currentPageIndex = parseInt(pageDot.dataset.pageJump, 10);
+                render(Store.getProject(pageDot.dataset.projectId));
                 return;
             }
 
@@ -142,8 +146,7 @@ const Phase3 = (() => {
                     const textarea = editArea.querySelector('textarea');
                     if (textarea) {
                         _saveDraftInstructions(projectId, labId, actId, textarea.value);
-                        const project = Store.getProject(projectId);
-                        render(project);
+                        render(Store.getProject(projectId));
                     }
                 }
                 return;
@@ -154,6 +157,17 @@ const Phase3 = (() => {
             if (cancelEditBtn) {
                 const projectId = cancelEditBtn.dataset.projectId;
                 render(Store.getProject(projectId));
+                return;
+            }
+
+            // Regenerate single activity instructions
+            const regenBtn = target.closest('[data-regenerate-activity]');
+            if (regenBtn) {
+                handleGenerateActivityInstructions(
+                    regenBtn.dataset.labId,
+                    regenBtn.dataset.activityId,
+                    regenBtn.dataset.projectId
+                );
                 return;
             }
         });
@@ -178,7 +192,7 @@ const Phase3 = (() => {
             'custom': 'Custom',
         };
 
-        // Build outline content for Draft Instructions tab
+        // Build compact outline for Outline tab
         const structure = project.programStructure;
         let outlineHtml = '';
         if (!structure || !structure.labSeries || structure.labSeries.length === 0) {
@@ -192,12 +206,28 @@ const Phase3 = (() => {
             for (const ls of structure.labSeries) {
                 outlineHtml += `<div class="phase3-series-header">${escHtml(ls.title)}</div>`;
                 for (const lab of (ls.labs || [])) {
-                    outlineHtml += _renderLabCard(lab, project);
+                    outlineHtml += _renderLabRow(lab, project);
                 }
             }
         }
 
-        // Blueprint header + tabs
+        // Build Draft Instructions tab content (for selected lab)
+        let draftsHtml = '';
+        const selectedLab = _expandedLabId ? _findLab(structure, _expandedLabId) : null;
+        if (selectedLab) {
+            draftsHtml = _renderPaginatedInstructions(selectedLab, project);
+        } else {
+            draftsHtml = `
+                <div class="phase3-empty-state">
+                    <p>Select a lab from the Outline tab to review its instructions.</p>
+                </div>
+            `;
+        }
+
+        // Determine active tab
+        const activeTab = _expandedLabId ? 'drafts' : 'outline';
+
+        // Blueprint header + 3 tabs
         const html = `
             <div class="bp-header">
                 <h3 class="bp-title">Lab Blueprint</h3>
@@ -205,12 +235,17 @@ const Phase3 = (() => {
             </div>
 
             <div class="phase2-tabs">
-                <button class="context-tab active" data-phase3-tab="drafts">Draft Instructions</button>
+                <button class="context-tab${activeTab === 'outline' ? ' active' : ''}" data-phase3-tab="outline">Outline</button>
+                <button class="context-tab${activeTab === 'drafts' ? ' active' : ''}" data-phase3-tab="drafts">Draft Instructions</button>
                 <button class="context-tab" data-phase3-tab="styling">Styling</button>
             </div>
 
-            <div id="phase3-tab-drafts" class="phase3-tab-panel active">
+            <div id="phase3-tab-outline" class="phase3-tab-panel${activeTab === 'outline' ? ' active' : ''}"${activeTab !== 'outline' ? ' style="display:none;"' : ''}>
                 ${outlineHtml}
+            </div>
+
+            <div id="phase3-tab-drafts" class="phase3-tab-panel${activeTab === 'drafts' ? ' active' : ''}"${activeTab !== 'drafts' ? ' style="display:none;"' : ''}>
+                ${draftsHtml}
             </div>
 
             <div id="phase3-tab-styling" class="phase3-tab-panel" style="display:none;padding:12px 16px;">
@@ -301,76 +336,102 @@ const Phase3 = (() => {
         });
     }
 
-    function _renderLabCard(lab, project) {
+    function _findLab(structure, labId) {
+        if (!structure || !structure.labSeries) return null;
+        for (const ls of structure.labSeries) {
+            for (const lab of (ls.labs || [])) {
+                if (lab.id === labId) return lab;
+            }
+        }
+        return null;
+    }
+
+    function _renderLabRow(lab, project) {
         const activities = lab.activities || [];
         const duration = lab.estimatedDuration ? formatDuration(lab.estimatedDuration) : '';
-        const hasAnyInstructions = _labHasAnyInstructions(lab.id, project);
-
-        let activitiesHtml = activities.map(act =>
-            _renderActivityRow(act, lab.id, project)
-        ).join('');
+        const draftedCount = activities.filter(a => _hasInstructions(lab.id, a.id, project)).length;
+        const totalCount = activities.length;
+        const isSelected = _expandedLabId === lab.id;
 
         return `
-            <div class="phase3-lab-card" data-lab-id="${lab.id}">
-                <div class="phase3-lab-header">
-                    <button class="phase3-lab-toggle expanded">
-                        <span class="toggle-icon">\u25BC</span>
-                    </button>
-                    <span class="phase3-lab-title">${escHtml(lab.title)}</span>
-                    ${duration ? `<span class="phase3-lab-duration">${duration}</span>` : ''}
-                    <button class="btn-sm btn-generate-all" data-generate-lab-instructions data-lab-id="${lab.id}" data-project-id="${project.id}">
-                        ${hasAnyInstructions ? 'Regenerate All' : 'Generate All Instructions'}
-                    </button>
-                </div>
-                <div class="phase3-lab-body">
-                    ${activitiesHtml || '<div class="empty-state"><p>No activities defined.</p></div>'}
-                </div>
+            <div class="phase3-lab-row${isSelected ? ' selected' : ''}" data-lab-id="${lab.id}" data-project-id="${project.id}">
+                <span class="phase3-lab-title">${escHtml(lab.title)}</span>
+                ${duration ? `<span class="phase3-lab-duration">${duration}</span>` : ''}
+                <span class="phase3-draft-count ${draftedCount === totalCount ? 'complete' : ''}">${draftedCount}/${totalCount}</span>
             </div>
         `;
     }
 
-    function _renderActivityRow(activity, labId, project) {
-        const key = `${labId}-${activity.id}`;
-        const hasInstructions = _hasInstructions(labId, activity.id, project);
+    function _renderPaginatedInstructions(lab, project) {
+        const activities = lab.activities || [];
+        if (activities.length === 0) {
+            return '<div class="phase3-no-draft"><p>No activities defined for this lab.</p></div>';
+        }
 
-        let instructionsHtml = '';
+        const pageIndex = Math.min(_currentPageIndex, activities.length - 1);
+        const activity = activities[pageIndex];
+        const key = `${lab.id}-${activity.id}`;
+        const hasInstructions = _hasInstructions(lab.id, activity.id, project);
+
+        // Page dots
+        const dots = activities.map((act, i) => {
+            const hasDraft = _hasInstructions(lab.id, act.id, project);
+            const activeClass = i === pageIndex ? ' active' : '';
+            const draftClass = hasDraft ? ' drafted' : '';
+            return `<span class="phase3-page-dot${activeClass}${draftClass}" data-page-jump="${i}" data-project-id="${project.id}" title="${escHtml(act.title)}">${i + 1}</span>`;
+        }).join('');
+
+        // Instructions content
+        let contentHtml = '';
         if (hasInstructions) {
-            const md = project.draftInstructions[labId][activity.id];
+            const md = project.draftInstructions[lab.id][activity.id];
             const renderedHtml = typeof Markdown !== 'undefined' ? Markdown.render(md) : `<pre>${escHtml(md)}</pre>`;
 
-            instructionsHtml = `
-                <div class="phase3-instructions">
-                    <div class="phase3-instructions-actions">
-                        <button data-toggle-instructions data-lab-id="${labId}" data-activity-id="${activity.id}">Raw</button>
-                        <button data-copy-instructions data-lab-id="${labId}" data-activity-id="${activity.id}" data-project-id="${project.id}">Copy</button>
-                        <button data-edit-instructions data-lab-id="${labId}" data-activity-id="${activity.id}" data-project-id="${project.id}">Edit</button>
-                    </div>
+            contentHtml = `
+                <div class="phase3-instructions-actions">
+                    <button data-toggle-instructions data-lab-id="${lab.id}" data-activity-id="${activity.id}">Raw</button>
+                    <button data-copy-instructions data-lab-id="${lab.id}" data-activity-id="${activity.id}" data-project-id="${project.id}">Copy</button>
+                    <button data-edit-instructions data-lab-id="${lab.id}" data-activity-id="${activity.id}" data-project-id="${project.id}">Edit</button>
+                    <button data-regenerate-activity data-lab-id="${lab.id}" data-activity-id="${activity.id}" data-project-id="${project.id}">Regenerate</button>
+                </div>
+                <div class="phase3-instructions-content">
                     <div id="instructions-preview-${key}" class="phase3-instructions-preview">${renderedHtml}</div>
                     <div id="instructions-raw-${key}" class="phase3-instructions-raw" style="display:none;"><pre>${escHtml(md)}</pre></div>
                     <div id="instructions-edit-${key}" class="phase3-instructions-edit" style="display:none;">
                         <textarea class="phase3-instructions-textarea" rows="15">${escHtml(md)}</textarea>
                         <div class="phase3-instructions-edit-actions">
-                            <button data-save-instructions data-lab-id="${labId}" data-activity-id="${activity.id}" data-project-id="${project.id}">Save</button>
+                            <button data-save-instructions data-lab-id="${lab.id}" data-activity-id="${activity.id}" data-project-id="${project.id}">Save</button>
                             <button data-cancel-edit data-project-id="${project.id}">Cancel</button>
                         </div>
                     </div>
                 </div>
             `;
+        } else {
+            contentHtml = `
+                <div class="phase3-no-draft">
+                    <p>No draft yet for this activity.</p>
+                    <p class="hint">Ask in chat to generate instructions, or the AI will draft all when entering Phase 3.</p>
+                </div>
+            `;
         }
 
+        const prevDisabled = pageIndex === 0 ? ' disabled' : '';
+        const nextDisabled = pageIndex === activities.length - 1 ? ' disabled' : '';
+
         return `
-            <div class="phase3-activity-row" data-activity-id="${activity.id}">
-                <div class="phase3-activity-header">
-                    <span class="phase3-activity-icon">\u{1F4CB}</span>
-                    <span class="phase3-activity-title">${escHtml(activity.title)}</span>
-                    <span class="phase3-activity-status ${hasInstructions ? 'has-instructions' : 'no-instructions'}">
-                        ${hasInstructions ? '\u2705' : '\u26AA'}
-                    </span>
-                    <button class="btn-sm" data-generate-activity-instructions data-lab-id="${labId}" data-activity-id="${activity.id}" data-project-id="${project.id}">
-                        ${hasInstructions ? 'Regenerate' : 'Draft'}
-                    </button>
+            <div class="phase3-lab-instructions">
+                <div class="phase3-page-header">
+                    <span class="phase3-page-activity-title">${escHtml(activity.title)}</span>
+                    <span class="phase3-page-label">Page ${pageIndex + 1} of ${activities.length}</span>
                 </div>
-                ${instructionsHtml}
+                <div class="phase3-page-nav">
+                    <button class="phase3-page-btn"${prevDisabled} data-page-dir="-1" data-page-total="${activities.length}" data-project-id="${project.id}">\u2190 Prev</button>
+                    <div class="phase3-page-dots">${dots}</div>
+                    <button class="phase3-page-btn"${nextDisabled} data-page-dir="1" data-page-total="${activities.length}" data-project-id="${project.id}">Next \u2192</button>
+                </div>
+                <div class="phase3-instructions">
+                    ${contentHtml}
+                </div>
             </div>
         `;
     }
