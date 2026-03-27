@@ -595,24 +595,19 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleCustomStyleField(s.instructionStyleGuide);
 
         // Branding
-        $('#settings-branding-source-url').value = s.brandingSourceUrl || '';
-        $('#settings-font-heading').value = (s.brandFonts && s.brandFonts.heading) || '';
-        $('#settings-font-body').value = (s.brandFonts && s.brandFonts.body) || '';
-
-        // Brand colors
-        const colors = s.brandColors || {};
-        if (colors.primary) $('#settings-color-primary').value = colors.primary;
-        if (colors.secondary) $('#settings-color-secondary').value = colors.secondary;
-        if (colors.accent) $('#settings-color-accent').value = colors.accent;
-        if (colors.text) $('#settings-color-text').value = colors.text;
-        if (colors.background) $('#settings-color-background').value = colors.background;
+        const brandUrl = $('#settings-branding-source-url');
+        if (brandUrl) brandUrl.value = s.brandingSourceUrl || '';
+        const colorPrimary = $('#settings-color-primary');
+        if (colorPrimary && s.brandColors?.primary) colorPrimary.value = s.brandColors.primary;
 
         // Logo preview
         const logoPreview = $('#settings-logo-preview');
-        if (s.logoUrl) {
-            logoPreview.innerHTML = `<img src="${escHtml(s.logoUrl)}" alt="Logo preview" style="max-height:60px;">`;
-        } else {
-            logoPreview.innerHTML = '';
+        if (logoPreview) {
+            if (s.logoUrl) {
+                logoPreview.innerHTML = `<img src="${escHtml(s.logoUrl)}" alt="Logo preview" style="max-height:60px;">`;
+            } else {
+                logoPreview.innerHTML = '';
+            }
         }
 
         // Endpoint field visibility
@@ -785,18 +780,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const customUrlInput = $('#settings-custom-style-url');
         if (customUrlInput) Settings.set('customStyleGuideUrl', customUrlInput.value);
 
-        Settings.set('brandingSourceUrl', $('#settings-branding-source-url').value);
-        Settings.set('brandColors', {
-            primary: $('#settings-color-primary').value,
-            secondary: $('#settings-color-secondary').value,
-            accent: $('#settings-color-accent').value,
-            text: $('#settings-color-text').value,
-            background: $('#settings-color-background').value,
-        });
-        Settings.set('brandFonts', {
-            heading: $('#settings-font-heading').value,
-            body: $('#settings-font-body').value,
-        });
+        const brandUrl = $('#settings-branding-source-url');
+        if (brandUrl) Settings.set('brandingSourceUrl', brandUrl.value);
+        const colorPrimary = $('#settings-color-primary');
+        if (colorPrimary) Settings.set('brandColors', { primary: colorPrimary.value });
         Settings.save();
     }
 
