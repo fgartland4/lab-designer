@@ -991,6 +991,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize resizers
     bindPaneResizers();
 
+    // Expose a small API for phase controllers
+    window.App = {
+        getCurrentProjectId: () => currentProject ? currentProject.id : null,
+        renderChatHistory,
+        refreshCurrentProject: () => {
+            currentProject = Store.getActiveProject();
+            return currentProject;
+        },
+    };
+
     // ══════════════════════════════════════════════════════════════
     //  Utilities
     // ══════════════════════════════════════════════════════════════

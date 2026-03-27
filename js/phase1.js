@@ -61,8 +61,102 @@ const Phase1 = (() => {
             if (uploadBtn) {
                 const fileInput = $('#phase1-file-input');
                 if (fileInput) fileInput.click();
+                return;
+            }
+
+            const resetBtn = e.target.closest('[data-action="reset-phase1"]');
+            if (resetBtn) {
+                _showResetDialog();
             }
         });
+    }
+
+    function _showResetDialog() {
+        // Remove any existing dialog
+        const existing = document.getElementById('phase1-reset-overlay');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'phase1-reset-overlay';
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal reset-modal">
+                <div class="modal-body reset-modal-body">
+                    <div class="reset-modal-icon">🧹</div>
+                    <h3 class="reset-modal-title">Clean slate?</h3>
+                    <p class="reset-modal-text">
+                        This will wipe everything in Phase 1 — your chat history,
+                        the Blueprint, uploaded materials, all of it.
+                        Like it never happened.
+                    </p>
+                    <p class="reset-modal-subtext">
+                        (Phases 2–4 won't be touched.)
+                    </p>
+                </div>
+                <div class="modal-footer reset-modal-footer">
+                    <button class="btn-reset-cancel" id="reset-keep-going">Nah, keep going</button>
+                    <button class="btn-reset-confirm" id="reset-nuke-it">Delete &amp; start over</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.remove();
+        });
+
+        // Keep going
+        document.getElementById('reset-keep-going').addEventListener('click', () => {
+            overlay.remove();
+        });
+
+        // Nuke it
+        document.getElementById('reset-nuke-it').addEventListener('click', () => {
+            _resetPhase1();
+            overlay.remove();
+        });
+    }
+
+    function _resetPhase1() {
+        const pid = window.App ? App.getCurrentProjectId() : null;
+        const project = pid ? Store.getProject(pid) : null;
+        if (!project) return;
+
+        // Clear all Phase 1 data
+        project.uploads = [];
+        project.urls = [];
+        project.audiences = [];
+        project.businessObjectives = [];
+        project.learningObjectives = [];
+        project.competencies = [];
+        project.successCriteria = [];
+        project.technologyPlatform = '';
+        project.documentationRefs = [];
+        project.scenarioSeeds = [];
+        project.phase1Chat = [];
+        project.recommendedDifficulty = '';
+        project.recommendedFramework = null;
+        project.name = 'Untitled Program';
+
+        Store.updateProject(project);
+
+        // Refresh app's reference to the project
+        if (window.App && App.refreshCurrentProject) {
+            App.refreshCurrentProject();
+        }
+
+        // Clear the chat DOM and re-render welcome
+        if (window.App && App.renderChatHistory) {
+            App.renderChatHistory('phase1');
+        }
+
+        // Re-render the Blueprint as empty state
+        const container = $('#phase1-context');
+        if (container) {
+            container.innerHTML = `<div class="empty-state"><p>Upload materials or chat to get started.</p></div>`;
+        }
     }
 
     function _bindAddUrlButton() {
@@ -164,8 +258,9 @@ const Phase1 = (() => {
         container.innerHTML = `
             <div class="bp-header">
                 <h3 class="bp-title">Lab Blueprint</h3>
-                ${programName ? `<div class="bp-program-name">${escHtml(programName)}</div>` : ''}
+                <button class="bp-reset-btn" data-action="reset-phase1" title="Start over">Reset</button>
             </div>
+            ${programName ? `<div class="bp-program-name">${escHtml(programName)}</div>` : ''}
             <div class="bp-checklist" id="bp-checklist"></div>
         `;
 
