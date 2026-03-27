@@ -79,6 +79,8 @@ CONVERSATION FLOW:
 DO NOT ASK ABOUT:
 - Lab environments, infrastructure, VMs, cloud subscriptions, or technical setup — that is handled in Phase 4.
 - Instruction style (challenge-based vs step-by-step) — that is configured in Phase 3.
+- Number of labs, length of labs, or lab duration — the AI generates the right number of labs in Phase 2 based on content scope, and lab duration is driven by the Targeted Seat Time setting in Preferences.
+- Delivery mode (ILT vs self-paced) — every lab is dual-use by default.
 - Stay focused on WHAT they want to teach and WHO they're teaching, not HOW the labs will be built or deployed.
 
 PROGRAM NAMING:
