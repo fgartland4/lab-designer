@@ -38,7 +38,7 @@ const Chat = (() => {
     // ── System prompt builders ──────────────────────────────────
 
     function buildSystemPrompt(phase, context) {
-        const seatTime = context.seatTime || Settings.get('defaultSeatTime') || 45;
+        const seatTime = context.seatTime || Settings.get('defaultSeatTime') || '45-75';
         let prompt = '';
 
         switch (phase) {
@@ -117,7 +117,7 @@ Be opinionated — propose strong names. The program owner can refine them.`;
 Output the program structure as:
 \`\`\`
 ===PROGRAM_STRUCTURE===
-{ "labSeries": [{ "id": "ls-1", "title": "...", "description": "...", "labs": [{ "id": "lab-1", "title": "...", "description": "...", "estimatedDuration": ${seatTime}, "activities": [{ "id": "act-1", "title": "...", "description": "..." }] }] }], "instructionStyle": "step-by-step" }
+{ "labSeries": [{ "id": "ls-1", "title": "...", "description": "...", "labs": [{ "id": "lab-1", "title": "...", "description": "...", "estimatedDuration": "${seatTime}", "activities": [{ "id": "act-1", "title": "...", "description": "..." }] }] }], "instructionStyle": "step-by-step" }
 ===END_PROGRAM_STRUCTURE===
 \`\`\`
 
@@ -328,7 +328,7 @@ Output structured data as:
         const context = {
             seatTime: project.seatTime
                 ? `${project.seatTime.min}-${project.seatTime.max}`
-                : Settings.get('defaultSeatTime') || 45,
+                : Settings.get('defaultSeatTime') || '45-75',
             frameworkId: project.framework,
             instructionStyle: project.instructionStyle || 'step-by-step',
         };

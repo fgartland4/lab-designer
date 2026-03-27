@@ -422,7 +422,7 @@ body {
 
 .sidebar-settings-icon {
     font-size: 20px;
-    color: #fff;
+    color: var(--color-sidebar-text-muted);
     transition: color var(--transition);
     line-height: 1;
 }
@@ -430,15 +430,12 @@ body {
 .sidebar-settings-label {
     font-size: 13px;
     font-weight: 600;
-    color: #fff;
+    color: var(--color-sidebar-text-muted);
     transition: color var(--transition);
 }
 
 .sidebar-settings-btn:hover .sidebar-settings-icon,
-.sidebar-settings-btn:hover .sidebar-settings-label {
-    color: #fff;
-}
-
+.sidebar-settings-btn:hover .sidebar-settings-label,
 .sidebar-settings-btn.active .sidebar-settings-icon,
 .sidebar-settings-btn.active .sidebar-settings-label {
     color: #fff;
