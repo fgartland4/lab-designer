@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctrl.render(currentProject);
             }
             renderChatHistory(section);
+            showPhaseWelcomeIfNeeded(section);
         } else if (section === 'settings') {
             renderSettings();
         }
@@ -306,6 +307,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderChatMessage('phase1', 'assistant',
                     `Tell me about the program you're building.\n\n` +
                     `If you have any documents — like learning objectives, job task analyses, job descriptions, or even a task list — click the paperclip below to upload them and we'll get started.`
+                );
+            }
+        }
+    }
+
+    function showPhaseWelcomeIfNeeded(phaseKey) {
+        if (!currentProject) return;
+        const history = Store.getChatHistory(currentProject.id, phaseKey);
+        if (history.length > 0) return; // already has conversation
+
+        if (phaseKey === 'phase2') {
+            const hasObjectives = (currentProject.businessObjectives && currentProject.businessObjectives.length > 0) ||
+                (currentProject.learningObjectives && currentProject.learningObjectives.length > 0);
+            const hasAudiences = currentProject.audiences && currentProject.audiences.length > 0;
+
+            if (!hasObjectives || !hasAudiences) {
+                renderChatMessage('phase2', 'assistant',
+                    `Looking forward to generating an outline with you, but I need some context first.\n\n` +
+                    `If you could answer a few more questions in **Phase 1**, that would help a ton. Or you can upload or paste a starter outline here if you have one.`
+                );
+            } else {
+                renderChatMessage('phase2', 'assistant',
+                    `Great — you've got a solid foundation from Phase 1. I'm ready to stub out a suggested lab outline based on your objectives and audiences.\n\n` +
+                    `Say **"generate outline"** and I'll create a draft structure with Lab Series, Labs, and Activities. Or paste your own outline here if you already have one.`
+                );
+            }
+        } else if (phaseKey === 'phase3') {
+            const hasStructure = currentProject.programStructure &&
+                currentProject.programStructure.labSeries &&
+                currentProject.programStructure.labSeries.length > 0;
+
+            if (!hasStructure) {
+                renderChatMessage('phase3', 'assistant',
+                    `Before we draft instructions, we need a lab outline to work from.\n\n` +
+                    `Head over to **Phase 2** to generate or define your lab structure first.`
+                );
+            } else {
+                renderChatMessage('phase3', 'assistant',
+                    `Your lab outline is ready. Let's start drafting instructions for each activity.\n\n` +
+                    `Pick an instruction style above, then say **"start drafting"** and I'll begin writing step-by-step instructions for your first lab.`
                 );
             }
         }
