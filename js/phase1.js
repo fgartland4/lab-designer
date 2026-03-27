@@ -50,6 +50,13 @@ const Phase1 = (() => {
         _bindUploadButton();
         _bindAddUrlButton();
         _bindFileInput();
+        _bindResetButton();
+    }
+
+    function _bindResetButton() {
+        const btn = $('#phase1-reset-btn');
+        if (!btn) return;
+        btn.addEventListener('click', () => _showResetDialog());
     }
 
     function _bindUploadButton() {
@@ -61,12 +68,6 @@ const Phase1 = (() => {
             if (uploadBtn) {
                 const fileInput = $('#phase1-file-input');
                 if (fileInput) fileInput.click();
-                return;
-            }
-
-            const resetBtn = e.target.closest('[data-action="reset-phase1"]');
-            if (resetBtn) {
-                _showResetDialog();
             }
         });
     }
@@ -258,9 +259,8 @@ const Phase1 = (() => {
         container.innerHTML = `
             <div class="bp-header">
                 <h3 class="bp-title">Lab Blueprint</h3>
-                <button class="bp-reset-btn" data-action="reset-phase1" title="Start over">Reset</button>
+                ${programName ? `<div class="bp-program-name">${escHtml(programName)}</div>` : ''}
             </div>
-            ${programName ? `<div class="bp-program-name">${escHtml(programName)}</div>` : ''}
             <div class="bp-checklist" id="bp-checklist"></div>
         `;
 
