@@ -178,9 +178,9 @@ const Phase3 = (() => {
                 <label class="form-label">Instruction Style</label>
                 <select id="phase3-instruction-style" class="form-select">
                     <option value="challenge"${instructionStyle === 'challenge' ? ' selected' : ''}>Challenge-based</option>
-                    <option value="step-by-step"${instructionStyle === 'step-by-step' ? ' selected' : ''}>Step-by-step</option>
                     <option value="mixed"${instructionStyle === 'mixed' ? ' selected' : ''}>Mixed</option>
                     <option value="performance-test"${instructionStyle === 'performance-test' ? ' selected' : ''}>Performance Test</option>
+                    <option value="step-by-step"${instructionStyle === 'step-by-step' ? ' selected' : ''}>Step-by-step</option>
                 </select>
                 <span class="form-hint">How should the AI draft instructions for activities?</span>
             </div>
