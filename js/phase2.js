@@ -613,15 +613,15 @@ const Phase2 = (() => {
 
         return `
             <div class="mapping-row ${statusClass}" data-mapping-idx="${index}">
-                <div class="mapping-competency">
-                    <span class="mapping-dot ${approved ? 'filled' : ''}"></span>
-                    <strong>${_escHtml(mapping.competency)}</strong>
-                    ${mapping.source ? `<span class="mapping-source">[${_escHtml(mapping.source)}]</span>` : ''}
-                </div>
-                <div class="mapping-arrow">\u2192</div>
                 <div class="mapping-target">
+                    <span class="mapping-dot ${approved ? 'filled' : ''}"></span>
                     ${targetSelect}
                     <span class="mapping-level">${levelLabel}</span>
+                </div>
+                <div class="mapping-arrow">\u2192</div>
+                <div class="mapping-competency">
+                    <strong>${_escHtml(mapping.competency)}</strong>
+                    ${mapping.source ? `<span class="mapping-source">[${_escHtml(mapping.source)}]</span>` : ''}
                 </div>
                 <div class="mapping-actions">
                     ${!approved

@@ -3526,6 +3526,10 @@ body {
         flex-direction: column;
     }
 
+    .pane-resizer {
+        display: none;
+    }
+
     .context-panel {
         width: 100%;
         min-width: 0;
