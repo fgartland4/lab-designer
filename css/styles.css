@@ -1165,6 +1165,32 @@ body {
     font-weight: 500;
 }
 
+/* Seat time editor in Blueprint */
+.bp-seat-time-editor {
+    padding: 4px 0;
+}
+.bp-seat-time-select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--color-text);
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+.bp-seat-time-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+.bp-seat-time-hint {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
 /* Competency source groups */
 .bp-source-group {
     margin-bottom: 10px;

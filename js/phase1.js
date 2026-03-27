@@ -206,7 +206,7 @@ const Phase1 = (() => {
                 label: 'Target Lab Duration',
                 filled: true, // always has a default
                 summary: `${seatTime.min}\u2013${seatTime.max} min`,
-                detail: null,
+                detail: _renderSeatTimeEditor(seatTime, project.id),
             },
             {
                 key: 'criteria',
@@ -291,6 +291,21 @@ const Phase1 = (() => {
                 _expandedSections.add(key);
             }
         });
+
+        // Seat time editor change handler
+        checklist.addEventListener('change', (e) => {
+            const sel = e.target.closest('[data-action="change-seat-time"]');
+            if (!sel) return;
+            const pid = sel.dataset.project;
+            const proj = Store.getProject(pid);
+            if (!proj) return;
+            const parts = sel.value.split('-');
+            proj.seatTime = { min: parseInt(parts[0], 10), max: parseInt(parts[1], 10) };
+            Store.updateProject(proj);
+            // Update the summary text without full re-render
+            const summaryEl = sel.closest('.bp-item').querySelector('.bp-summary');
+            if (summaryEl) summaryEl.textContent = `${proj.seatTime.min}\u2013${proj.seatTime.max} min`;
+        });
     }
 
     // ── Detail renderers ─────────────────────────────────────────
@@ -355,6 +370,26 @@ const Phase1 = (() => {
                 ${r.notes ? `<span class="bp-detail-meta">${escHtml(r.notes)}</span>` : ''}
             </div>
         `).join('');
+    }
+
+    function _renderSeatTimeEditor(seatTime, projectId) {
+        const current = `${seatTime.min}-${seatTime.max}`;
+        const options = [
+            { value: '15-30', label: '15–30 min' },
+            { value: '30-45', label: '30–45 min' },
+            { value: '45-75', label: '45–75 min' },
+            { value: '75-90', label: '75–90 min' },
+            { value: '90-120', label: '90–120 min' },
+        ];
+        const opts = options.map(o =>
+            `<option value="${o.value}" ${o.value === current ? 'selected' : ''}>${o.label}</option>`
+        ).join('');
+        return `<div class="bp-seat-time-editor">
+            <select class="bp-seat-time-select" data-action="change-seat-time" data-project="${projectId}">
+                ${opts}
+            </select>
+            <div class="bp-seat-time-hint">Drives the number and scope of labs generated in Phase 2</div>
+        </div>`;
     }
 
     function _renderSeedsDetail(seeds) {
