@@ -414,6 +414,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     `**Keep in mind:** These are draft instructions — scaffolding to give your lab authors a strong head start. Final editing, polish, and QA will happen in Skillable Studio.`
                 );
             }
+        } else if (phaseKey === 'phase4') {
+            const hasStructure = currentProject.programStructure &&
+                currentProject.programStructure.labSeries &&
+                currentProject.programStructure.labSeries.length > 0;
+            const hasDrafts = currentProject.draftInstructions &&
+                Object.keys(currentProject.draftInstructions).length > 0;
+
+            if (!hasStructure) {
+                renderChatMessage('phase4', 'assistant',
+                    `We're almost there! But I need your lab outline and draft instructions before I can assemble the environment checklist.\n\n` +
+                    `Head back to **Phase 2** to build your outline, then **Phase 3** to draft instructions.`
+                );
+            } else {
+                const programName = currentProject.name && currentProject.name !== 'Untitled Program'
+                    ? `**${currentProject.name}**` : 'your lab program';
+                renderChatMessage('phase4', 'assistant',
+                    `Great work! ${programName} is looking like an incredible lab program!\n\n` +
+                    `Now that we've thought through everything you want people to do, it's time for me to assemble a checklist of all the **technologies, software, accounts, permissions, tools, configurations, files, and dummy data** you'll need for the environments in these labs.\n\n` +
+                    `Before I get started, is there anything special you want to be sure I include?`
+                );
+            }
         }
     }
 
