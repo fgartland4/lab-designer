@@ -1,65 +1,148 @@
 /**
- * settings.js — Settings management and AI provider integration for Lab Designer v2.
+ * settings.js — Settings management and AI provider integration for Lab Designer v3.
+ *
+ * Manages user preferences, branding, default references, and AI API routing.
+ * All settings are persisted in localStorage under 'labdesigner_settings'.
  */
 
 const Settings = (() => {
-    const STORAGE_KEY = 'labdesigner_v2_settings';
+    const STORAGE_KEY = 'labdesigner_settings';
 
-    const DEFAULTS = {
-        aiProvider: 'claude',
-        apiKey: '',
-        model: 'claude-sonnet-4-20250514',
-        endpointUrl: '',
-        targetDuration: 60,
-        activitiesPerLab: 4,
+    const DEFAULT_MODELS = {
+        claude: 'claude-sonnet-4-20250514',
+        openai: 'gpt-4o',
+        custom: 'default',
     };
 
-    function get() {
+    const DEFAULTS = {
+        // AI Provider
+        aiProvider: 'claude',
+        apiKey: '',
+        model: DEFAULT_MODELS.claude,
+        customEndpoint: '',
+
+        // Lab Defaults
+        defaultSeatTime: 45,
+        activitiesPerLab: 5,
+        defaultDifficulty: 'intermediate',
+
+        // Branding
+        logoUrl: '',
+        brandingSourceUrl: '',
+        brandColors: {
+            primary: '',
+            secondary: '',
+            accent: '',
+            text: '',
+            background: '',
+        },
+        brandFonts: {
+            heading: '',
+            body: '',
+        },
+
+        // Default Reference Materials
+        defaultReferences: [],
+    };
+
+    let _settings = null;
+
+    // ── Persistence ──
+
+    function load() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+            const stored = raw ? JSON.parse(raw) : {};
+            _settings = deepMerge(structuredClone(DEFAULTS), stored);
         } catch {
-            return { ...DEFAULTS };
+            _settings = structuredClone(DEFAULTS);
         }
+        return _settings;
     }
 
-    function update(partial) {
-        const current = get();
-        const updated = { ...current, ...partial };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        return updated;
+    function save() {
+        if (!_settings) load();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(_settings));
+    }
+
+    // ── Accessors ──
+
+    function get(key) {
+        if (!_settings) load();
+        return key in _settings ? _settings[key] : undefined;
+    }
+
+    function set(key, value) {
+        if (!_settings) load();
+        _settings[key] = value;
+        save();
+        return value;
+    }
+
+    function getAll() {
+        if (!_settings) load();
+        return structuredClone(_settings);
+    }
+
+    // ── Default References ──
+
+    function addDefaultReference(ref) {
+        if (!_settings) load();
+        if (!ref || !ref.id) {
+            throw new Error('Reference must include an id');
+        }
+        const exists = _settings.defaultReferences.some(r => r.id === ref.id);
+        if (exists) {
+            _settings.defaultReferences = _settings.defaultReferences.map(r =>
+                r.id === ref.id ? ref : r
+            );
+        } else {
+            _settings.defaultReferences.push(ref);
+        }
+        save();
+    }
+
+    function removeDefaultReference(id) {
+        if (!_settings) load();
+        _settings.defaultReferences = _settings.defaultReferences.filter(r => r.id !== id);
+        save();
+    }
+
+    // ── AI Provider Helpers ──
+
+    function getDefaultModel(provider) {
+        return DEFAULT_MODELS[provider] || DEFAULT_MODELS.claude;
     }
 
     function isConfigured() {
-        const s = get();
-        return !!s.apiKey;
+        if (!_settings) load();
+        return !!_settings.apiKey;
     }
 
     // ── AI API Calls ──
 
     async function callAI(messages, options = {}) {
-        const s = get();
-        if (!s.apiKey) throw new Error('No API key configured. Go to Settings to add one.');
-
-        const provider = s.aiProvider || 'claude';
-
-        if (provider === 'claude') {
-            return callClaude(s, messages, options);
-        } else if (provider === 'openai') {
-            return callOpenAI(s, messages, options);
-        } else if (provider === 'custom') {
-            return callCustom(s, messages, options);
+        if (!_settings) load();
+        if (!_settings.apiKey) {
+            throw new Error('No API key configured. Go to Settings to add one.');
         }
 
-        throw new Error('Unknown AI provider: ' + provider);
+        const provider = _settings.aiProvider || 'claude';
+
+        switch (provider) {
+            case 'claude':  return _callClaude(messages, options);
+            case 'openai':  return _callOpenAI(messages, options);
+            case 'custom':  return _callCustom(messages, options);
+            default:        throw new Error(`Unknown AI provider: ${provider}`);
+        }
     }
 
-    async function callClaude(s, messages, options) {
+    async function _callClaude(messages, options) {
         const systemMsg = messages.find(m => m.role === 'system');
         const chatMessages = messages.filter(m => m.role !== 'system');
 
         const body = {
-            model: s.model || 'claude-sonnet-4-20250514',
+            model: _settings.model || DEFAULT_MODELS.claude,
             max_tokens: options.maxTokens || 4096,
             messages: chatMessages.map(m => ({ role: m.role, content: m.content })),
         };
@@ -72,7 +155,7 @@ const Settings = (() => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-api-key': s.apiKey,
+                'x-api-key': _settings.apiKey,
                 'anthropic-version': '2023-06-01',
                 'anthropic-dangerous-direct-browser-access': 'true',
             },
@@ -88,9 +171,9 @@ const Settings = (() => {
         return data.content?.[0]?.text || '';
     }
 
-    async function callOpenAI(s, messages, options) {
+    async function _callOpenAI(messages, options) {
         const body = {
-            model: s.model || 'gpt-4o',
+            model: _settings.model || DEFAULT_MODELS.openai,
             max_tokens: options.maxTokens || 4096,
             messages: messages.map(m => ({ role: m.role, content: m.content })),
         };
@@ -99,7 +182,7 @@ const Settings = (() => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${s.apiKey}`,
+                'Authorization': `Bearer ${_settings.apiKey}`,
             },
             body: JSON.stringify(body),
         });
@@ -113,18 +196,23 @@ const Settings = (() => {
         return data.choices?.[0]?.message?.content || '';
     }
 
-    async function callCustom(s, messages, options) {
+    async function _callCustom(messages, options) {
+        const endpoint = _settings.customEndpoint;
+        if (!endpoint) {
+            throw new Error('Custom endpoint URL is not configured. Go to Settings to add one.');
+        }
+
         const body = {
-            model: s.model || 'default',
+            model: _settings.model || DEFAULT_MODELS.custom,
             max_tokens: options.maxTokens || 4096,
             messages: messages.map(m => ({ role: m.role, content: m.content })),
         };
 
-        const res = await fetch(s.endpointUrl, {
+        const res = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${s.apiKey}`,
+                'Authorization': `Bearer ${_settings.apiKey}`,
             },
             body: JSON.stringify(body),
         });
@@ -135,8 +223,10 @@ const Settings = (() => {
         }
 
         const data = await res.json();
-        // Try common response formats
-        return data.content?.[0]?.text || data.choices?.[0]?.message?.content || JSON.stringify(data);
+        // Support both Claude-style and OpenAI-style response formats
+        return data.content?.[0]?.text
+            || data.choices?.[0]?.message?.content
+            || JSON.stringify(data);
     }
 
     async function testConnection() {
@@ -151,5 +241,40 @@ const Settings = (() => {
         }
     }
 
-    return { get, update, isConfigured, callAI, testConnection };
+    // ── Utilities ──
+
+    function deepMerge(target, source) {
+        for (const key of Object.keys(source)) {
+            if (
+                source[key] !== null &&
+                typeof source[key] === 'object' &&
+                !Array.isArray(source[key]) &&
+                typeof target[key] === 'object' &&
+                target[key] !== null &&
+                !Array.isArray(target[key])
+            ) {
+                deepMerge(target[key], source[key]);
+            } else {
+                target[key] = source[key];
+            }
+        }
+        return target;
+    }
+
+    // Initialize on load
+    load();
+
+    return {
+        get,
+        set,
+        getAll,
+        save,
+        load,
+        addDefaultReference,
+        removeDefaultReference,
+        callAI,
+        testConnection,
+        getDefaultModel,
+        isConfigured,
+    };
 })();
