@@ -3189,6 +3189,40 @@ body {
     margin-left: 4px;
 }
 
+/* Narrow select dropdowns for Lab Defaults */
+.select-narrow {
+    max-width: 160px;
+}
+
+/* Settings examples list */
+.settings-examples {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.settings-examples-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-light);
+    margin-bottom: 2px;
+}
+
+.settings-example {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    padding-left: 10px;
+    position: relative;
+}
+
+.settings-example::before {
+    content: '\2022';
+    position: absolute;
+    left: 0;
+    color: var(--color-text-muted);
+}
+
 /* Logo dropzone */
 .logo-dropzone {
     position: relative;
