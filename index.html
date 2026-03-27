@@ -295,7 +295,7 @@
                         </div>
 
                         <!-- Lab Defaults -->
-                        <div class="settings-section">
+                        <div class="settings-section settings-full-width">
                             <h3 class="settings-section-title">Lab Defaults</h3>
                             <div class="settings-row-3">
                                 <div class="form-group">
@@ -321,22 +321,28 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group" style="margin-top:12px;">
-                                <label>Logo</label>
-                                <div class="logo-dropzone" id="settings-logo-dropzone">
-                                    <div id="settings-logo-preview" class="logo-preview"></div>
-                                    <div class="logo-dropzone-prompt" id="settings-logo-prompt">
-                                        <span class="logo-dropzone-icon">+</span>
-                                        <span>Click or drag to upload</span>
+                            <div class="settings-grid" style="margin-top:12px;">
+                                <div>
+                                    <div class="form-group">
+                                        <label>Logo</label>
+                                        <div class="logo-dropzone" id="settings-logo-dropzone">
+                                            <div id="settings-logo-preview" class="logo-preview"></div>
+                                            <div class="logo-dropzone-prompt" id="settings-logo-prompt">
+                                                <span class="logo-dropzone-icon">+</span>
+                                                <span>Click or drag to upload</span>
+                                            </div>
+                                            <input type="file" id="settings-logo-upload" accept="image/*">
+                                        </div>
                                     </div>
-                                    <input type="file" id="settings-logo-upload" accept="image/*">
+                                </div>
+                                <div>
+                                    <div class="form-group">
+                                        <label for="settings-branding-source-url">Brand URL</label>
+                                        <input type="text" id="settings-branding-source-url" placeholder="https://your-company.com">
+                                    </div>
+                                    <span class="form-hint">Detailed theming, colors, and styling configured in Skillable Studio.</span>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label for="settings-branding-source-url">Brand URL</label>
-                                <input type="text" id="settings-branding-source-url" placeholder="https://your-company.com">
-                            </div>
-                            <span class="form-hint">Detailed theming, colors, and styling configured in Skillable Studio.</span>
                         </div>
 
                         <!-- Writing & References -->
