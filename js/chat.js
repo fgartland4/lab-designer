@@ -101,12 +101,20 @@ DIFFICULTY RECOMMENDATION:
 - Valid levels: "beginner", "intermediate", "advanced", "expert"
 - Include your recommendation in the structured output as "recommendedDifficulty".
 
+COMPETENCY FRAMEWORK RECOMMENDATION:
+- Once you understand the technology and audience, recommend a competency framework that should be used to align skills and labs.
+- Examples: "CompTIA Security+", "AWS Solutions Architect", "Commvault Certification", "CISSP CBK", "Kubernetes CKAD", vendor-specific certification tracks, etc.
+- Explain why you're recommending it and suggest 1-2 alternatives the designer could choose instead.
+- The designer can accept, choose a different one, or ignore frameworks entirely.
+- Include in structured output as "recommendedFramework": { "name": "...", "reason": "...", "alternatives": ["...", "..."] }
+- Skills/competencies you extract should be tagged with this framework as their source once accepted.
+
 IMPORTANT — OUTPUT STRUCTURED DATA EARLY AND OFTEN:
 After EVERY response where you learn something new, output a structured data block with whatever you have so far. Do NOT wait until you have everything — output partial data immediately so the Lab Blueprint panel updates in real time. The data blocks are merged automatically, so it's safe to send partial updates. This gives the program designer a live preview they can react to.
 
 \`\`\`
 ===PHASE1_DATA===
-{ "programName": "...", "audiences": [{ "role": "...", "responsibilities": "...", "prerequisites": "..." }], "businessObjectives": ["..."], "learningObjectives": ["..."], "competencies": [{ "name": "...", "description": "...", "source": "AI-extracted" }], "successCriteria": ["..."], "technologyPlatform": "...", "recommendedDifficulty": "intermediate", "documentationRefs": [{ "url": "...", "title": "...", "notes": "..." }], "scenarioSeeds": [{ "title": "...", "description": "..." }] }
+{ "programName": "...", "audiences": [{ "role": "...", "responsibilities": "...", "prerequisites": "..." }], "businessObjectives": ["..."], "learningObjectives": ["..."], "competencies": [{ "name": "...", "description": "...", "source": "Framework Name" }], "successCriteria": ["..."], "technologyPlatform": "...", "recommendedDifficulty": "intermediate", "recommendedFramework": { "name": "...", "reason": "...", "alternatives": ["...", "..."] }, "documentationRefs": [{ "url": "...", "title": "...", "notes": "..." }], "scenarioSeeds": [{ "title": "...", "description": "..." }] }
 ===END_PHASE1_DATA===
 \`\`\`
 

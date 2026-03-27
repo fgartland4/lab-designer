@@ -156,6 +156,8 @@ const Phase1 = (() => {
         const competencies = project.competencies || [];
         const platform = project.technologyPlatform || '';
         const seatTime = project.seatTime || { min: 45, max: 90 };
+        const difficulty = project.recommendedDifficulty || '';
+        const recFramework = project.recommendedFramework || null;
 
         // Blueprint header
         const programName = (project.name && project.name !== 'Untitled Program') ? project.name : '';
@@ -193,8 +195,15 @@ const Phase1 = (() => {
                 detail: platform ? `<div class="bp-badge">${escHtml(platform)}</div>` : null,
             },
             {
+                key: 'difficulty',
+                label: 'Recommended Difficulty',
+                filled: !!difficulty,
+                summary: difficulty ? difficulty.charAt(0).toUpperCase() + difficulty.slice(1) : 'Pending',
+                detail: null,
+            },
+            {
                 key: 'seat-time',
-                label: 'Target Seat Time / Lab',
+                label: 'Target Lab Duration',
                 filled: true, // always has a default
                 summary: `${seatTime.min}\u2013${seatTime.max} min`,
                 detail: null,
@@ -216,9 +225,9 @@ const Phase1 = (() => {
             {
                 key: 'competencies',
                 label: 'Competency Framework',
-                filled: competencies.length > 0,
-                summary: competencies.length > 0 ? `${competencies.length} mapped` : 'None yet',
-                detail: competencies.length > 0 ? _renderCompetenciesDetail(competencies) : null,
+                filled: competencies.length > 0 || !!recFramework,
+                summary: _competenciesSummary(competencies, recFramework),
+                detail: (competencies.length > 0 || recFramework) ? _renderCompetenciesDetail(competencies, recFramework, project.id) : null,
             },
         ];
 
@@ -245,6 +254,26 @@ const Phase1 = (() => {
 
         // Bind expand/collapse
         checklist.addEventListener('click', (e) => {
+            // Framework accept/ignore buttons
+            const fwBtn = e.target.closest('[data-action]');
+            if (fwBtn) {
+                const action = fwBtn.dataset.action;
+                const pid = fwBtn.dataset.project;
+                const proj = Store.getProject(pid);
+                if (proj && proj.recommendedFramework) {
+                    if (action === 'accept-framework') {
+                        proj.recommendedFramework.accepted = true;
+                        Store.updateProject(proj);
+                        render(proj);
+                    } else if (action === 'ignore-framework') {
+                        proj.recommendedFramework = null;
+                        Store.updateProject(proj);
+                        render(proj);
+                    }
+                }
+                return;
+            }
+
             const toggle = e.target.closest('[data-toggle-bp]');
             if (!toggle) return;
             const key = toggle.dataset.key;
@@ -337,11 +366,59 @@ const Phase1 = (() => {
         `).join('');
     }
 
-    function _renderCompetenciesDetail(competencies) {
-        return '<div class="bp-detail-tags">' +
-            competencies.map(c =>
-                `<span class="bp-tag" title="${escHtml(c.description || '')}">${escHtml(c.name)}${c.source ? ` <small>[${escHtml(c.source)}]</small>` : ''}</span>`
-            ).join('') + '</div>';
+    function _competenciesSummary(competencies, recFramework) {
+        const parts = [];
+        if (recFramework) parts.push(recFramework.name);
+        if (competencies.length > 0) parts.push(`${competencies.length} skills`);
+        return parts.length > 0 ? parts.join(' · ') : 'None yet';
+    }
+
+    function _renderCompetenciesDetail(competencies, recFramework, projectId) {
+        let html = '';
+
+        // Framework recommendation banner
+        if (recFramework) {
+            const accepted = recFramework.accepted;
+            html += `<div class="bp-framework-rec">`;
+            html += `<div class="bp-framework-name">${escHtml(recFramework.name)}</div>`;
+            if (recFramework.reason) {
+                html += `<div class="bp-framework-reason">${escHtml(recFramework.reason)}</div>`;
+            }
+            if (recFramework.alternatives && recFramework.alternatives.length > 0) {
+                html += `<div class="bp-framework-alts">Alternatives: ${recFramework.alternatives.map(a => escHtml(a)).join(', ')}</div>`;
+            }
+            if (!accepted) {
+                html += `<div class="bp-framework-actions">`;
+                html += `<button class="bp-framework-accept" data-action="accept-framework" data-project="${projectId}">Use this framework</button>`;
+                html += `<button class="bp-framework-ignore" data-action="ignore-framework" data-project="${projectId}">No framework</button>`;
+                html += `</div>`;
+            } else {
+                html += `<div class="bp-framework-status">✓ Active framework</div>`;
+            }
+            html += `</div>`;
+        }
+
+        // Group competencies by source
+        if (competencies.length > 0) {
+            const bySource = {};
+            for (const c of competencies) {
+                const src = c.source || 'Unknown';
+                if (!bySource[src]) bySource[src] = [];
+                bySource[src].push(c);
+            }
+
+            for (const [source, comps] of Object.entries(bySource)) {
+                html += `<div class="bp-source-group">`;
+                html += `<div class="bp-source-label">${escHtml(source)}</div>`;
+                html += '<div class="bp-detail-tags">' +
+                    comps.map(c =>
+                        `<span class="bp-tag" title="${escHtml(c.description || '')}">${escHtml(c.name)}</span>`
+                    ).join('') + '</div>';
+                html += '</div>';
+            }
+        }
+
+        return html;
     }
 
     // ── Data mutation helpers (still needed for inline edits) ────
@@ -527,6 +604,16 @@ const Phase1 = (() => {
         // Recommended difficulty
         if (structured.recommendedDifficulty) {
             project.recommendedDifficulty = structured.recommendedDifficulty;
+        }
+
+        // Recommended framework
+        if (structured.recommendedFramework && !project.recommendedFramework) {
+            project.recommendedFramework = {
+                name: structured.recommendedFramework.name || structured.recommendedFramework,
+                reason: structured.recommendedFramework.reason || '',
+                alternatives: structured.recommendedFramework.alternatives || [],
+                accepted: false,
+            };
         }
 
         // Merge scenario seeds
