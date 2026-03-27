@@ -3232,6 +3232,18 @@ body {
     display: none;
 }
 
+.ref-dropzone {
+    min-height: 52px;
+    padding: 12px;
+}
+
+.ref-file-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text);
+    word-break: break-all;
+}
+
 /* ===== 27. Forms ===== */
 .form-group {
     margin-bottom: 14px;

@@ -589,10 +589,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Style guide
         const styleSelect = $('#settings-style-guide');
-        if (styleSelect) styleSelect.value = s.instructionStyleGuide || 'microsoft';
+        if (styleSelect) {
+            // If custom guide URL exists, ensure it's in the dropdown
+            if (s.customStyleGuideUrl) {
+                _ensureCustomStyleOption(s.customStyleGuideUrl);
+                styleSelect.value = 'custom';
+            } else {
+                styleSelect.value = s.instructionStyleGuide || 'microsoft';
+            }
+        }
         const customUrlInput = $('#settings-custom-style-url');
         if (customUrlInput) customUrlInput.value = s.customStyleGuideUrl || '';
-        toggleCustomStyleField(s.instructionStyleGuide);
+
+        // Always-on references
+        const refUrl1 = $('#settings-ref-url-1');
+        const refUrl2 = $('#settings-ref-url-2');
+        if (refUrl1) refUrl1.value = s.refUrl1 || '';
+        if (refUrl2) refUrl2.value = s.refUrl2 || '';
+        // Reference file preview
+        const refPreview = $('#settings-ref-file-preview');
+        const refDropzone = $('#settings-ref-dropzone');
+        if (refPreview && s.refFileName) {
+            refPreview.innerHTML = `<span class="ref-file-name">${escHtml(s.refFileName)}</span>`;
+            if (refDropzone) refDropzone.classList.add('has-logo');
+        } else if (refPreview) {
+            refPreview.innerHTML = '';
+            if (refDropzone) refDropzone.classList.remove('has-logo');
+        }
 
         // Branding
         const brandUrl = $('#settings-branding-source-url');
@@ -613,8 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Endpoint field visibility
         toggleEndpointField(s.aiProvider);
 
-        // References
-        renderReferences(s.defaultReferences || []);
+        // (references are rendered inline via ref URL fields and ref file dropzone)
     }
 
     function bindSettings() {
@@ -624,11 +646,15 @@ document.addEventListener('DOMContentLoaded', () => {
             filterModelsByProvider(e.target.value);
         });
 
-        // Style guide change
-        const styleSelect = $('#settings-style-guide');
-        if (styleSelect) {
-            styleSelect.addEventListener('change', (e) => {
-                toggleCustomStyleField(e.target.value);
+        // Custom style guide — auto-add to dropdown on blur
+        const customStyleInput = $('#settings-custom-style-url');
+        if (customStyleInput) {
+            customStyleInput.addEventListener('change', () => {
+                const url = customStyleInput.value.trim();
+                if (url) {
+                    _ensureCustomStyleOption(url);
+                    $('#settings-style-guide').value = 'custom';
+                }
             });
         }
 
@@ -706,39 +732,37 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Add reference URL
-        $('#settings-add-ref-url').addEventListener('click', () => {
-            const url = prompt('Reference URL:');
-            if (!url) return;
-            Settings.addDefaultReference({
-                id: Store.generateId(),
-                type: 'url',
-                url: url,
-                title: url,
-            });
-            renderReferences(Settings.get('defaultReferences') || []);
-        });
-
-        // Add reference file
-        $('#settings-add-ref-file').addEventListener('click', () => {
-            $('#settings-ref-file-input').click();
-        });
-        $('#settings-ref-file-input').addEventListener('change', (e) => {
-            const file = e.target.files[0];
+        // Reference file dropzone
+        const refDropzone = $('#settings-ref-dropzone');
+        const refFileInput = $('#settings-ref-file-input');
+        function handleRefFile(file) {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (ev) => {
-                Settings.addDefaultReference({
-                    id: Store.generateId(),
-                    type: 'file',
-                    title: file.name,
-                    content: ev.target.result,
-                });
-                renderReferences(Settings.get('defaultReferences') || []);
+                Settings.set('refFileName', file.name);
+                Settings.set('refFileContent', ev.target.result);
+                const preview = $('#settings-ref-file-preview');
+                if (preview) preview.innerHTML = `<span class="ref-file-name">${escHtml(file.name)}</span>`;
+                if (refDropzone) refDropzone.classList.add('has-logo');
+                _flashSaved();
             };
             reader.readAsText(file);
-            e.target.value = '';
-        });
+        }
+        if (refFileInput) {
+            refFileInput.addEventListener('change', (e) => {
+                handleRefFile(e.target.files[0]);
+                e.target.value = '';
+            });
+        }
+        if (refDropzone) {
+            refDropzone.addEventListener('dragover', (e) => { e.preventDefault(); refDropzone.classList.add('dragover'); });
+            refDropzone.addEventListener('dragleave', () => refDropzone.classList.remove('dragover'));
+            refDropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                refDropzone.classList.remove('dragover');
+                handleRefFile(e.dataTransfer.files[0]);
+            });
+        }
 
         // Settings import/export buttons
         const settingsImportBtn = $('#settings-import-project');
@@ -799,6 +823,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const brandUrl = $('#settings-branding-source-url');
         if (brandUrl) Settings.set('brandingSourceUrl', brandUrl.value);
+
+        // Always-on references
+        const refUrl1 = $('#settings-ref-url-1');
+        if (refUrl1) Settings.set('refUrl1', refUrl1.value);
+        const refUrl2 = $('#settings-ref-url-2');
+        if (refUrl2) Settings.set('refUrl2', refUrl2.value);
+
         Settings.save();
     }
 
@@ -822,9 +853,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function toggleCustomStyleField(styleGuide) {
-        const group = $('#settings-custom-style-group');
-        if (group) group.style.display = styleGuide === 'custom' ? 'block' : 'none';
+    function _ensureCustomStyleOption(url) {
+        const select = $('#settings-style-guide');
+        if (!select) return;
+        let customOpt = select.querySelector('option[value="custom"]');
+        if (!customOpt) {
+            customOpt = document.createElement('option');
+            customOpt.value = 'custom';
+            select.insertBefore(customOpt, select.firstChild);
+        }
+        // Show truncated URL as label
+        const label = url.length > 40 ? url.substring(0, 37) + '...' : url;
+        customOpt.textContent = `Custom: ${label}`;
+    }
+
+    function _noOp_renderReferences(refs) {
+        // Legacy — references now use inline URL fields + file dropzone
+        return;
     }
 
     function renderReferences(refs) {
