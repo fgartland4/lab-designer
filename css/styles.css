@@ -1107,7 +1107,7 @@ body {
 .style-radio-group .form-label {
     font-size: 13px;
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     display: block;
 }
 
@@ -1115,10 +1115,10 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 7px 10px;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-sm);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     cursor: pointer;
     transition: all var(--transition);
     background: var(--color-surface);

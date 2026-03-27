@@ -256,14 +256,14 @@ const Phase3 = (() => {
                     ${_radioOption('instruction-style', 'performance-test', 'Performance Test', 'Task objective only, no hints or guidance. For high-stakes certification exams.', instructionStyle)}
                     ${_radioOption('instruction-style', 'step-by-step', 'Step-by-step', 'Detailed walkthrough with every action spelled out. Best for beginners or complex UIs.', instructionStyle)}
                 </div>
-                <div class="style-radio-group" style="margin-top:20px;">
+                <div class="style-radio-group" style="margin-top:14px;">
                     <label class="form-label">Writing Style Guide</label>
                     ${_radioOption('style-guide', 'microsoft', 'Microsoft Style Guide', 'Warm, relaxed tone. Second person. Short sentences. Action-oriented.', styleGuide)}
                     ${_radioOption('style-guide', 'apple', 'Apple Style Guide', 'Friendly, straightforward. Avoid technical terms when possible.', styleGuide)}
                     ${_radioOption('style-guide', 'redhat', 'Red Hat Documentation Guide', 'Precise, consistent terminology. Modular, task-based structure.', styleGuide)}
                     ${_radioOption('style-guide', 'digitalocean', 'DigitalOcean Technical Writing Guidelines', 'Tutorial-focused. Clear structure, practical examples, action-oriented steps.', styleGuide)}
                     ${_radioOption('style-guide', 'ibm', 'IBM Style Guide', 'Enterprise-grade clarity. Consistent terminology, structured for technical depth.', styleGuide)}
-                    ${_radioOption('style-guide', 'custom', 'Custom', 'Use a custom style guide configured in Settings.', styleGuide)}
+                    ${_radioOption('style-guide', 'custom', 'Add a Custom Style Guide in Settings', '', styleGuide)}
                 </div>
             </div>
         `;
