@@ -58,10 +58,9 @@ const Phase2 = (() => {
         const container = $('#phase2-context');
         if (!container) return;
 
-        container.innerHTML = _buildTabsShell();
+        container.innerHTML = _buildTabsShell(project);
         renderOutline(project.programStructure);
         renderFrameworkTab(project);
-        renderLabSettings(project);
 
         const firstBtn = $('[data-phase2-tab]', container);
         if (firstBtn) firstBtn.click();
@@ -71,12 +70,17 @@ const Phase2 = (() => {
         _bindFrameworkUploadInput(container);
     }
 
-    function _buildTabsShell() {
+    function _buildTabsShell(project) {
+        const programName = (project && project.name && project.name !== 'Untitled Program') ? project.name : '';
         return `
+            <div class="bp-header">
+                <h3 class="bp-title">Lab Blueprint</h3>
+                ${programName ? `<div class="bp-program-name">${_escHtml(programName)}</div>` : ''}
+            </div>
+
             <div class="phase2-tabs">
-                <button class="context-tab active" data-phase2-tab="outline">Program Outline</button>
-                <button class="context-tab" data-phase2-tab="framework">Framework Mapping</button>
-                <button class="context-tab" data-phase2-tab="settings">Lab Settings</button>
+                <button class="context-tab active" data-phase2-tab="outline">Lab Outline</button>
+                <button class="context-tab" data-phase2-tab="framework">Skill Mapping</button>
             </div>
 
             <div id="phase2-tab-outline" class="phase2-tab-panel active">
@@ -89,10 +93,6 @@ const Phase2 = (() => {
 
             <div id="phase2-tab-framework" class="phase2-tab-panel">
                 <div id="phase2-framework-content"></div>
-            </div>
-
-            <div id="phase2-tab-settings" class="phase2-tab-panel">
-                <div id="phase2-settings-content"></div>
             </div>
         `;
     }
@@ -577,7 +577,6 @@ const Phase2 = (() => {
         render,
         renderOutline,
         renderFrameworkTab,
-        renderLabSettings,
         toggleNode,
         expandAll,
         collapseAll,

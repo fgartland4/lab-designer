@@ -165,19 +165,41 @@ const Phase3 = (() => {
         const container = $('#phase3-context');
         if (!container || !project) return;
 
+        const programName = (project.name && project.name !== 'Untitled Program') ? project.name : '';
+        const instructionStyle = project.instructionStyle || '';
+
+        // Blueprint header + instruction style picker
+        let html = `
+            <div class="bp-header">
+                <h3 class="bp-title">Lab Blueprint</h3>
+                ${programName ? `<div class="bp-program-name">${escHtml(programName)}</div>` : ''}
+            </div>
+            <div class="phase3-style-picker">
+                <label class="form-label">Instruction Style</label>
+                <select id="phase3-instruction-style" class="form-select">
+                    <option value=""${!instructionStyle ? ' selected' : ''}>Not yet decided</option>
+                    <option value="step-by-step"${instructionStyle === 'step-by-step' ? ' selected' : ''}>Step-by-step</option>
+                    <option value="challenge"${instructionStyle === 'challenge' ? ' selected' : ''}>Challenge-based</option>
+                    <option value="mixed"${instructionStyle === 'mixed' ? ' selected' : ''}>Mixed</option>
+                </select>
+                <span class="form-hint">How should the AI draft instructions for activities?</span>
+            </div>
+        `;
+
         const structure = project.programStructure;
         if (!structure || !structure.labSeries || structure.labSeries.length === 0) {
-            container.innerHTML = `
+            html += `
                 <div class="phase3-empty-state">
                     <p>No program structure yet.</p>
                     <p class="hint">Complete Phase 2 to define your Lab Series, Labs, and Activities.</p>
                 </div>
             `;
+            container.innerHTML = html;
+            _bindStylePicker(container, project.id);
             return;
         }
 
         // Render the outline with instructions expanding under activities
-        let html = '';
         for (const ls of structure.labSeries) {
             html += `<div class="phase3-series-header">${escHtml(ls.title)}</div>`;
             for (const lab of (ls.labs || [])) {
@@ -186,6 +208,19 @@ const Phase3 = (() => {
         }
 
         container.innerHTML = html;
+        _bindStylePicker(container, project.id);
+    }
+
+    function _bindStylePicker(container, projectId) {
+        const select = $('#phase3-instruction-style', container);
+        if (!select) return;
+        select.addEventListener('change', () => {
+            const project = Store.getProject(projectId);
+            if (project) {
+                project.instructionStyle = select.value;
+                Store.updateProject(project);
+            }
+        });
     }
 
     function _renderLabCard(lab, project) {
