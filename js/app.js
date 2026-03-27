@@ -568,6 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         $('#settings-ai-provider').value = s.aiProvider || 'claude';
         $('#settings-api-key').value = s.apiKey || '';
+        filterModelsByProvider(s.aiProvider || 'claude');
         $('#settings-model').value = s.model || '';
         $('#settings-endpoint').value = s.customEndpoint || '';
         $('#settings-default-seat-time').value = s.defaultSeatTime || 45;
@@ -619,6 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Provider change
         $('#settings-ai-provider').addEventListener('change', (e) => {
             toggleEndpointField(e.target.value);
+            filterModelsByProvider(e.target.value);
         });
 
         // Style guide change
@@ -769,6 +771,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleEndpointField(provider) {
         const group = $('#settings-endpoint-group');
         if (group) group.style.display = provider === 'custom' ? 'block' : 'none';
+    }
+
+    function filterModelsByProvider(provider) {
+        const select = $('#settings-model');
+        if (!select) return;
+        const groups = select.querySelectorAll('optgroup');
+        groups.forEach(g => {
+            g.style.display = g.dataset.provider === provider ? '' : 'none';
+        });
+        // If current selection is hidden, pick first visible option
+        const selected = select.options[select.selectedIndex];
+        if (selected && selected.parentElement.style.display === 'none') {
+            const visible = select.querySelector(`optgroup[data-provider="${provider}"] option`);
+            if (visible) select.value = visible.value;
+        }
     }
 
     function toggleCustomStyleField(styleGuide) {
