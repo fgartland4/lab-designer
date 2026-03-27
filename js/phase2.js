@@ -1,5 +1,5 @@
 /**
- * phase2.js — Phase 2 "Design & Configure" UI controller for Lab Designer v3.
+ * phase2.js — Phase 2 "Design & Configure" UI controller for Lab Program Designer v3.
  * Manages the split-panel layout: chat on the left, context panel on the right.
  * Context panel has three tabs: Curriculum Outline, Framework Mapping, Lab Settings.
  */

@@ -1,5 +1,5 @@
 /**
- * settings.js — Settings management and AI provider integration for Lab Designer v3.
+ * settings.js — Settings management and AI provider integration for Lab Program Designer v3.
  *
  * Manages user preferences, branding, default references, and AI API routing.
  * All settings are persisted in localStorage under 'labdesigner_settings'.

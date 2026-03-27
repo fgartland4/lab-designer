@@ -1,5 +1,5 @@
 /**
- * chat.js — Chat engine for Lab Designer v3.
+ * chat.js — Chat engine for Lab Program Designer v3.
  * Handles AI conversations across 4 phases with phase-specific system prompts,
  * context injection from prior phases, and structured output parsing.
  *

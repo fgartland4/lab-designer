@@ -1,5 +1,5 @@
 /**
- * frameworks.js — Skill framework catalog for Lab Designer.
+ * frameworks.js — Skill framework catalog for Lab Program Designer.
  * Contains metadata for public frameworks that can be used for curriculum mapping.
  */
 

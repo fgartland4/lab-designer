@@ -1,5 +1,5 @@
 /**
- * phase4.js — Phase 4 "Architect & Build" UI controller for Lab Designer v3.
+ * phase4.js — Phase 4 "Architect & Build" UI controller for Lab Program Designer v3.
  * Renders environment templates, bill of materials, lifecycle scripts, and export controls.
  *
  * Depends on: Store, Chat, Exporter (all global IIFEs).

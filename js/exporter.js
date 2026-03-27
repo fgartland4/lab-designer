@@ -1,5 +1,5 @@
 /**
- * exporter.js — Converts Lab Designer v3 data to Skillable Lab on Demand (LOD) export format.
+ * exporter.js — Converts Lab Program Designer v3 data to Skillable Lab on Demand (LOD) export format.
  * Generates ZIP packages containing data.json for LOD import.
  * Also provides BOM CSV export and clean JSON export.
  *
@@ -470,7 +470,7 @@ const Exporter = (() => {
         const labSeries = {
             Id: seriesId,
             Name: project.name || 'Lab Series',
-            Description: `Lab series generated from Lab Designer project: ${project.name || 'Untitled'}`,
+            Description: `Lab series generated from Lab Program Designer project: ${project.name || 'Untitled'}`,
         };
 
         // Build all VM profiles across all templates

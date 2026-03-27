@@ -1,5 +1,5 @@
 /**
- * app.js — Thin orchestrator for Lab Designer v3.0.0.
+ * app.js — Thin orchestrator for Lab Program Designer v3.0.0.
  * Handles navigation, project management, chat dispatch, settings binding,
  * and import/export. Delegates rendering to Phase1-4 controllers.
  */
@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const history = Store.getChatHistory(currentProject.id, 'phase1');
         if (history.length === 0) {
             renderChatMessage('phase1', 'assistant',
-                `Welcome to Lab Designer! I'm here to help you create a hands-on lab training program.\n\n` +
+                `Welcome to Lab Program Designer! I'm here to help you create a hands-on lab training program.\n\n` +
                 `Let's start by understanding what your learners need to be able to do. You can:\n\n` +
                 `- **Upload documents** like job task analyses, job descriptions, or learning objectives using the paperclip icon\n` +
                 `- **Tell me about your program** — what technology, platform, or product are your learners using? Who is the target audience?\n` +

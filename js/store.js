@@ -1,5 +1,5 @@
 /**
- * store.js — Data persistence for Lab Designer v3.
+ * store.js — Data persistence for Lab Program Designer v3.
  * Manages projects across 4 phases: Audiences & Objectives, Design & Configure,
  * Organize & Finalize, Architect & Build.
  *

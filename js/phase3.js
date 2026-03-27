@@ -1,5 +1,5 @@
 /**
- * phase3.js — Phase 3 "Organize & Finalize" UI controller for Lab Designer v3.
+ * phase3.js — Phase 3 "Organize & Finalize" UI controller for Lab Program Designer v3.
  * Manages the split-panel layout: chat on the left, context panel on the right.
  * Renders lab blueprint cards with approval workflows, activity outlines,
  * and draft instruction previews.
