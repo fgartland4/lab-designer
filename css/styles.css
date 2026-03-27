@@ -404,6 +404,31 @@ body {
     color: var(--color-sidebar-text-muted);
 }
 
+.progress-icon {
+    display: inline-block;
+    line-height: 1;
+}
+
+.progress-icon.empty {
+    color: var(--color-sidebar-text-muted);
+    opacity: 0.5;
+}
+
+.progress-icon.in-progress {
+    color: #f5a623;
+    animation: progressPulse 2s ease-in-out infinite;
+}
+
+.progress-icon.complete {
+    color: #00D082;
+    font-weight: 700;
+}
+
+@keyframes progressPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
 .sidebar-footer {
     margin-top: auto;
     padding: 16px;

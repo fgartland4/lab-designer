@@ -82,14 +82,16 @@ DIFFICULTY RECOMMENDATION:
 - Valid levels: "beginner", "intermediate", "advanced", "expert"
 - Include your recommendation in the structured output as "recommendedDifficulty".
 
-When you have gathered sufficient information, output a structured block:
+IMPORTANT — OUTPUT STRUCTURED DATA EARLY AND OFTEN:
+After EVERY response where you learn something new, output a structured data block with whatever you have so far. Do NOT wait until you have everything — output partial data immediately so the Lab Blueprint panel updates in real time. The data blocks are merged automatically, so it's safe to send partial updates. This gives the program designer a live preview they can react to.
+
 \`\`\`
 ===PHASE1_DATA===
 { "programName": "...", "audiences": [{ "role": "...", "responsibilities": "...", "prerequisites": "..." }], "businessObjectives": ["..."], "learningObjectives": ["..."], "competencies": [{ "name": "...", "description": "...", "source": "AI-extracted" }], "successCriteria": ["..."], "technologyPlatform": "...", "recommendedDifficulty": "intermediate", "documentationRefs": [{ "url": "...", "title": "...", "notes": "..." }], "scenarioSeeds": [{ "title": "...", "description": "..." }] }
 ===END_PHASE1_DATA===
 \`\`\`
 
-Only include this block when you have meaningful data to contribute. Continue the conversation naturally otherwise. You can output partial data blocks as information is gathered — they will be merged.`;
+Only include fields you have data for — omit empty arrays or unknown fields. Each block is merged with previous data, so partial updates are expected and encouraged.`;
     }
 
     function _phase2Prompt(seatTime, context) {

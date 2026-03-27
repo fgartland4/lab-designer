@@ -576,15 +576,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!el) return;
         switch (state) {
             case 'check':
-                el.innerHTML = '&#9989;'; // checkmark
+                el.innerHTML = '<span class="progress-icon complete">&#10003;</span>';
                 el.title = 'Complete';
                 break;
             case 'half':
-                el.innerHTML = '&#9680;'; // half circle
-                el.title = 'In progress';
+                el.innerHTML = '<span class="progress-icon in-progress">&#9679;</span>';
+                el.title = 'In progress — check the Lab Blueprint';
                 break;
             default:
-                el.innerHTML = '&#9675;'; // empty circle
+                el.innerHTML = '<span class="progress-icon empty">&#9675;</span>';
                 el.title = 'Not started';
                 break;
         }
