@@ -207,13 +207,6 @@ const Phase1 = (() => {
                 detail: criteria.length > 0 ? _renderListDetail(criteria) : null,
             },
             {
-                key: 'materials',
-                label: 'Source Materials',
-                filled: uploads.length > 0 || urls.length > 0,
-                summary: _materialsSummary(uploads, urls),
-                detail: (uploads.length > 0 || urls.length > 0) ? _renderMaterialsDetail(uploads, urls) : null,
-            },
-            {
                 key: 'docs',
                 label: 'Documentation & References',
                 filled: docRefs.length > 0,
