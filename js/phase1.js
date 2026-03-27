@@ -215,7 +215,7 @@ const Phase1 = (() => {
             },
             {
                 key: 'competencies',
-                label: 'Competencies',
+                label: 'Competency Framework',
                 filled: competencies.length > 0,
                 summary: competencies.length > 0 ? `${competencies.length} mapped` : 'None yet',
                 detail: competencies.length > 0 ? _renderCompetenciesDetail(competencies) : null,
