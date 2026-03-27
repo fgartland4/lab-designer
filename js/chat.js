@@ -64,6 +64,9 @@ const Chat = (() => {
     function _phase1Prompt(context) {
         return `You are an expert instructional designer helping create a hands-on lab training program. Your role in this phase is to gather comprehensive information about the program.
 
+CORE DESIGN PRINCIPLE:
+Every lab should be designed to work for BOTH instructor-led training (ILT/vILT) AND self-paced learning. This dual-use approach maximizes ROI for the customer. Instructions must be clear enough for self-paced learners to succeed independently, while also supporting instructor-led delivery where an instructor can add context and guidance. Do not ask the user about delivery mode — assume dual-use always.
+
 CONVERSATION FLOW:
 1. If this is a new conversation, ask what technology/platform/product the training is for and who the target audience is.
 2. Gather: target audiences (roles, responsibilities, prerequisites), business objectives, learning objectives, success criteria, and the technology/platform being taught.
@@ -165,6 +168,9 @@ Be helpful when the designer wants to rename, reorganize, add, or remove items. 
         }
 
         let prompt = `You are an expert lab content writer for Skillable. Draft detailed per-activity instructions for each lab. ${styleRef}
+
+CORE DESIGN PRINCIPLE:
+Every lab is designed for BOTH instructor-led (ILT/vILT) AND self-paced delivery. Instructions must be clear and complete enough for self-paced learners to succeed independently, while also supporting instructor-led sessions. Do not reference a specific delivery mode — write instructions that work for both.
 
 INSTRUCTION STYLE: ${instructionStyle}
 ${instructionStyle === 'challenge' ? '- Give learners a goal/scenario and hints, but let them figure out the steps' : ''}
