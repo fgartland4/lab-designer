@@ -28,8 +28,8 @@
     --color-surface: #ffffff;
 
     /* Sidebar — Skillable dark green with grid */
-    --color-sidebar: #0A3E28;
-    --color-sidebar-hover: #0d4f33;
+    --color-sidebar: #1a4d35;
+    --color-sidebar-hover: #225f42;
     --color-sidebar-active: #00D082;
     --color-sidebar-text: rgba(255, 255, 255, 0.85);
     --color-sidebar-text-muted: rgba(255, 255, 255, 0.45);
