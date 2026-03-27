@@ -167,60 +167,120 @@ const Phase3 = (() => {
 
         const programName = (project.name && project.name !== 'Untitled Program') ? project.name : '';
         const instructionStyle = project.instructionStyle || 'challenge';
+        const styleGuide = (typeof Settings !== 'undefined' && Settings.get('instructionStyleGuide')) || 'microsoft';
 
-        // Blueprint header + instruction style picker
-        let html = `
-            <div class="bp-header">
-                <h3 class="bp-title">Lab Blueprint</h3>
-                ${programName ? `<div class="bp-program-name">${escHtml(programName)}</div>` : ''}
-            </div>
-            <div class="phase3-style-picker">
-                <label class="form-label">Instruction Style</label>
-                <select id="phase3-instruction-style" class="form-select">
-                    <option value="challenge"${instructionStyle === 'challenge' ? ' selected' : ''}>Challenge-based</option>
-                    <option value="mixed"${instructionStyle === 'mixed' ? ' selected' : ''}>Mixed</option>
-                    <option value="performance-test"${instructionStyle === 'performance-test' ? ' selected' : ''}>Performance Test</option>
-                    <option value="step-by-step"${instructionStyle === 'step-by-step' ? ' selected' : ''}>Step-by-step</option>
-                </select>
-                <span class="form-hint">How should the AI draft instructions for activities?</span>
-            </div>
-        `;
+        const styleGuideLabels = {
+            'microsoft': 'Microsoft Style Guide',
+            'google': 'Google Developer Docs',
+            'apple': 'Apple Style Guide',
+            'redhat': 'Red Hat Documentation Guide',
+            'custom': 'Custom',
+        };
 
+        // Build outline content for Draft Instructions tab
         const structure = project.programStructure;
+        let outlineHtml = '';
         if (!structure || !structure.labSeries || structure.labSeries.length === 0) {
-            html += `
+            outlineHtml = `
                 <div class="phase3-empty-state">
                     <p>No program structure yet.</p>
                     <p class="hint">Complete Phase 2 to define your Lab Series, Labs, and Activities.</p>
                 </div>
             `;
-            container.innerHTML = html;
-            _bindStylePicker(container, project.id);
-            return;
-        }
-
-        // Render the outline with instructions expanding under activities
-        for (const ls of structure.labSeries) {
-            html += `<div class="phase3-series-header">${escHtml(ls.title)}</div>`;
-            for (const lab of (ls.labs || [])) {
-                html += _renderLabCard(lab, project);
+        } else {
+            for (const ls of structure.labSeries) {
+                outlineHtml += `<div class="phase3-series-header">${escHtml(ls.title)}</div>`;
+                for (const lab of (ls.labs || [])) {
+                    outlineHtml += _renderLabCard(lab, project);
+                }
             }
         }
 
+        // Blueprint header + tabs
+        const html = `
+            <div class="bp-header">
+                <h3 class="bp-title">Lab Blueprint</h3>
+                ${programName ? `<div class="bp-program-name">${escHtml(programName)}</div>` : ''}
+            </div>
+
+            <div class="phase2-tabs">
+                <button class="context-tab active" data-phase3-tab="drafts">Draft Instructions</button>
+                <button class="context-tab" data-phase3-tab="styling">Styling</button>
+            </div>
+
+            <div id="phase3-tab-drafts" class="phase3-tab-panel active">
+                ${outlineHtml}
+            </div>
+
+            <div id="phase3-tab-styling" class="phase3-tab-panel" style="display:none;">
+                <div class="phase3-style-picker">
+                    <label class="form-label">Instruction Style</label>
+                    <select id="phase3-instruction-style" class="form-select">
+                        <option value="challenge"${instructionStyle === 'challenge' ? ' selected' : ''}>Challenge-based</option>
+                        <option value="mixed"${instructionStyle === 'mixed' ? ' selected' : ''}>Mixed</option>
+                        <option value="performance-test"${instructionStyle === 'performance-test' ? ' selected' : ''}>Performance Test</option>
+                        <option value="step-by-step"${instructionStyle === 'step-by-step' ? ' selected' : ''}>Step-by-step</option>
+                    </select>
+                    <span class="form-hint">How should the AI draft instructions for activities?</span>
+                </div>
+                <div class="phase3-style-picker" style="margin-top:12px;">
+                    <label class="form-label">Writing Style Guide</label>
+                    <select id="phase3-style-guide" class="form-select">
+                        ${Object.entries(styleGuideLabels).map(([val, label]) =>
+                            `<option value="${val}"${styleGuide === val ? ' selected' : ''}>${label}</option>`
+                        ).join('')}
+                    </select>
+                    <span class="form-hint">Tone, voice, and formatting conventions for drafted content.</span>
+                </div>
+            </div>
+        `;
+
         container.innerHTML = html;
+        _bindPhase3Tabs(container);
         _bindStylePicker(container, project.id);
+    }
+
+    function _bindPhase3Tabs(container) {
+        container.addEventListener('click', (e) => {
+            const tabBtn = e.target.closest('[data-phase3-tab]');
+            if (!tabBtn) return;
+
+            const tabName = tabBtn.dataset.phase3Tab;
+            $$('[data-phase3-tab]', container).forEach(b => b.classList.remove('active'));
+            tabBtn.classList.add('active');
+            $$('.phase3-tab-panel', container).forEach(p => {
+                p.style.display = 'none';
+                p.classList.remove('active');
+            });
+            const panel = $(`#phase3-tab-${tabName}`, container);
+            if (panel) {
+                panel.style.display = '';
+                panel.classList.add('active');
+            }
+        });
     }
 
     function _bindStylePicker(container, projectId) {
         const select = $('#phase3-instruction-style', container);
-        if (!select) return;
-        select.addEventListener('change', () => {
-            const project = Store.getProject(projectId);
-            if (project) {
-                project.instructionStyle = select.value;
-                Store.updateProject(project);
-            }
-        });
+        if (select) {
+            select.addEventListener('change', () => {
+                const project = Store.getProject(projectId);
+                if (project) {
+                    project.instructionStyle = select.value;
+                    Store.updateProject(project);
+                }
+            });
+        }
+
+        const guideSelect = $('#phase3-style-guide', container);
+        if (guideSelect) {
+            guideSelect.addEventListener('change', () => {
+                if (typeof Settings !== 'undefined') {
+                    Settings.set('instructionStyleGuide', guideSelect.value);
+                    Settings.save();
+                }
+            });
+        }
     }
 
     function _renderLabCard(lab, project) {
