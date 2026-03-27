@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=7">
+    <link rel="stylesheet" href="css/styles.css?v=8">
 </head>
 <body>
     <div id="app">
@@ -299,8 +299,15 @@
                             <h3 class="settings-section-title">Lab Defaults</h3>
                             <div class="settings-row-3">
                                 <div class="form-group">
-                                    <label for="settings-default-seat-time">Seat Time (mins)</label>
-                                    <input type="number" id="settings-default-seat-time" min="15" max="240" step="5" value="45">
+                                    <label for="settings-default-seat-time">Targeted Seat Time</label>
+                                    <select id="settings-default-seat-time">
+                                        <option value="15-30">15-30 min</option>
+                                        <option value="30-45">30-45 min</option>
+                                        <option value="45-75" selected>45-75 min</option>
+                                        <option value="75-90">75-90 min</option>
+                                        <option value="90-120">90-120 min</option>
+                                        <option value="120+">120+ min</option>
+                                    </select>
                                 </div>
                                 <div class="form-group">
                                     <label for="settings-activities-per-lab">Activities per Lab</label>
@@ -343,13 +350,16 @@
                                     <span class="form-hint">Detailed theming, colors, and styling configured in Skillable Studio.</span>
                                 </div>
                             </div>
+                            <div class="form-group" style="margin-top:12px;">
+                                <label for="settings-naming-formula">Lab Naming Formula</label>
+                                <input type="text" id="settings-naming-formula" placeholder="{Verb} {Specific Action} {Product Name}" value="{Verb} {Specific Action} {Product Name}">
+                                <span class="form-hint">e.g., "Configure Virtual Network Peering in Azure" &bull; "Deploy a Container App to Kubernetes" &bull; "Build a Data Pipeline with Azure Data Factory" &bull; "Investigate Security Alerts in Microsoft Sentinel"</span>
+                            </div>
                         </div>
 
                         <!-- Writing & References -->
-                        <div class="settings-section settings-full-width">
+                        <div class="settings-section">
                             <h3 class="settings-section-title">Writing & References</h3>
-                            <div class="settings-grid">
-                                <div>
                                     <div class="form-group">
                                         <label for="settings-style-guide">Default Style Guide</label>
                                         <select id="settings-style-guide">
@@ -365,36 +375,29 @@
                                         <input type="text" id="settings-custom-style-url" placeholder="https://your-company.com/style-guide">
                                         <span class="form-hint">Adds to the list above and becomes the default.</span>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="settings-naming-formula">Lab Naming Formula</label>
-                                        <input type="text" id="settings-naming-formula" placeholder="{Verb} {Specific Action} {Product Name}" value="{Verb} {Specific Action} {Product Name}">
-                                        <span class="form-hint">e.g., "Configure Virtual Network Peering in Azure"</span>
+                        </div>
+
+                        <!-- Always-On References -->
+                        <div class="settings-section">
+                            <h3 class="settings-section-title">Always-On References</h3>
+                            <span class="settings-section-hint">Included as context for every AI conversation.</span>
+                            <div class="form-group">
+                                <label for="settings-ref-url-1">Documentation Site</label>
+                                <input type="text" id="settings-ref-url-1" placeholder="https://docs.your-company.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="settings-ref-url-2">Knowledge Base / Wiki</label>
+                                <input type="text" id="settings-ref-url-2" placeholder="https://wiki.your-company.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Reference File</label>
+                                <div class="logo-dropzone ref-dropzone" id="settings-ref-dropzone">
+                                    <div id="settings-ref-file-preview" class="ref-file-preview"></div>
+                                    <div class="logo-dropzone-prompt" id="settings-ref-prompt">
+                                        <span class="logo-dropzone-icon">+</span>
+                                        <span>Click or drag to upload (.pdf, .md, .docx, .txt)</span>
                                     </div>
-                                </div>
-                                <div>
-                                    <div class="form-group">
-                                        <label>Always-On References</label>
-                                        <span class="form-hint" style="margin-bottom:8px;">Included as context for every AI conversation.</span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="settings-ref-url-1">Documentation Site</label>
-                                        <input type="text" id="settings-ref-url-1" placeholder="https://docs.your-company.com">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="settings-ref-url-2">Knowledge Base / Wiki</label>
-                                        <input type="text" id="settings-ref-url-2" placeholder="https://wiki.your-company.com">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Reference File</label>
-                                        <div class="logo-dropzone ref-dropzone" id="settings-ref-dropzone">
-                                            <div id="settings-ref-file-preview" class="ref-file-preview"></div>
-                                            <div class="logo-dropzone-prompt" id="settings-ref-prompt">
-                                                <span class="logo-dropzone-icon">+</span>
-                                                <span>Click or drag to upload (.pdf, .md, .docx, .txt)</span>
-                                            </div>
-                                            <input type="file" id="settings-ref-file-input" accept=".txt,.md,.pdf,.docx,.json,.csv">
-                                        </div>
-                                    </div>
+                                    <input type="file" id="settings-ref-file-input" accept=".txt,.md,.pdf,.docx,.json,.csv">
                                 </div>
                             </div>
                         </div>
@@ -421,18 +424,18 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="js/markdown.js?v=7"></script>
-    <script src="js/frameworks.js?v=7"></script>
-    <script src="js/catalog.js?v=7"></script>
-    <script src="js/store.js?v=7"></script>
-    <script src="js/settings.js?v=7"></script>
-    <script src="js/chat.js?v=7"></script>
-    <script src="js/exporter.js?v=7"></script>
-    <script src="js/phase1.js?v=7"></script>
-    <script src="js/phase2.js?v=7"></script>
-    <script src="js/studio-features.js?v=7"></script>
-    <script src="js/phase3.js?v=7"></script>
-    <script src="js/phase4.js?v=7"></script>
-    <script src="js/app.js?v=7"></script>
+    <script src="js/markdown.js?v=8"></script>
+    <script src="js/frameworks.js?v=8"></script>
+    <script src="js/catalog.js?v=8"></script>
+    <script src="js/store.js?v=8"></script>
+    <script src="js/settings.js?v=8"></script>
+    <script src="js/chat.js?v=8"></script>
+    <script src="js/exporter.js?v=8"></script>
+    <script src="js/phase1.js?v=8"></script>
+    <script src="js/phase2.js?v=8"></script>
+    <script src="js/studio-features.js?v=8"></script>
+    <script src="js/phase3.js?v=8"></script>
+    <script src="js/phase4.js?v=8"></script>
+    <script src="js/app.js?v=8"></script>
 </body>
 </html>

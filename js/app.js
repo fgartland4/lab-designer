@@ -577,7 +577,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (firstOpt) modelSelect.value = firstOpt.value;
         }
         $('#settings-endpoint').value = s.customEndpoint || '';
-        $('#settings-default-seat-time').value = s.defaultSeatTime || 45;
+        const validSeatTimes = ['15-30', '30-45', '45-75', '75-90', '90-120', '120+'];
+        const seatTime = validSeatTimes.includes(s.defaultSeatTime) ? s.defaultSeatTime : '45-75';
+        $('#settings-default-seat-time').value = seatTime;
         const apl = s.activitiesPerLab;
         const validApl = ['1-2', '3-5', '6-10', 'unlimited'];
         $('#settings-activities-per-lab').value = validApl.includes(apl) ? apl : '3-5';
@@ -807,7 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
         Settings.set('apiKey', $('#settings-api-key').value);
         Settings.set('model', $('#settings-model').value);
         Settings.set('customEndpoint', $('#settings-endpoint').value);
-        Settings.set('defaultSeatTime', parseInt($('#settings-default-seat-time').value) || 45);
+        Settings.set('defaultSeatTime', $('#settings-default-seat-time').value || '45-75');
         Settings.set('activitiesPerLab', $('#settings-activities-per-lab').value || '3-5');
         Settings.set('defaultDifficulty', $('#settings-default-difficulty').value);
 
