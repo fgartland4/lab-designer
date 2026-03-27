@@ -468,13 +468,47 @@ body {
     overflow: hidden;
 }
 
+/* Pane resizer handle */
+.pane-resizer {
+    width: 5px;
+    cursor: col-resize;
+    background: var(--color-border-light);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    transition: background 0.15s;
+}
+
+.pane-resizer:hover,
+.pane-resizer.dragging {
+    background: var(--color-primary);
+}
+
+.pane-resizer::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 32px;
+    border-left: 1px solid rgba(0,0,0,0.15);
+    border-right: 1px solid rgba(0,0,0,0.15);
+}
+
+.pane-resizer:hover::after,
+.pane-resizer.dragging::after {
+    border-left-color: rgba(255,255,255,0.5);
+    border-right-color: rgba(255,255,255,0.5);
+}
+
 /* ===== 7. Chat Panel ===== */
 .chat-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 0;
-    border-right: 1px solid var(--color-border);
+    min-width: 300px;
+    border-right: none;
 }
 
 .chat-header {

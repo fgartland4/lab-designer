@@ -808,6 +808,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ══════════════════════════════════════════════════════════════
+    //  Pane Resizer
+    // ══════════════════════════════════════════════════════════════
+
+    function bindPaneResizers() {
+        $$('.pane-resizer').forEach(resizer => {
+            resizer.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                const layout = resizer.closest('.phase-layout');
+                if (!layout) return;
+
+                const chatPanel = layout.querySelector('.chat-panel');
+                const contextPanel = layout.querySelector('.context-panel');
+                if (!chatPanel || !contextPanel) return;
+
+                resizer.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+
+                const layoutRect = layout.getBoundingClientRect();
+                const resizerWidth = resizer.offsetWidth;
+
+                const onMouseMove = (ev) => {
+                    const offsetX = ev.clientX - layoutRect.left;
+                    const totalWidth = layoutRect.width - resizerWidth;
+                    const minChat = 300;
+                    const minContext = 280;
+
+                    let chatWidth = Math.max(minChat, Math.min(offsetX, totalWidth - minContext));
+                    let contextWidth = totalWidth - chatWidth;
+
+                    chatPanel.style.flex = 'none';
+                    chatPanel.style.width = chatWidth + 'px';
+                    contextPanel.style.flex = 'none';
+                    contextPanel.style.width = contextWidth + 'px';
+                    contextPanel.style.minWidth = '0';
+                    contextPanel.style.maxWidth = 'none';
+                };
+
+                const onMouseUp = () => {
+                    resizer.classList.remove('dragging');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        });
+    }
+
+    // Initialize resizers
+    bindPaneResizers();
+
+    // ══════════════════════════════════════════════════════════════
     //  Utilities
     // ══════════════════════════════════════════════════════════════
 
