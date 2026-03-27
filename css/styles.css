@@ -422,14 +422,15 @@ body {
 
 .sidebar-settings-icon {
     font-size: 20px;
-    color: var(--color-sidebar-text-muted);
+    color: #fff;
     transition: color var(--transition);
     line-height: 1;
 }
 
 .sidebar-settings-label {
     font-size: 13px;
-    color: var(--color-sidebar-text-muted);
+    font-weight: 600;
+    color: #fff;
     transition: color var(--transition);
 }
 
