@@ -181,7 +181,11 @@ const Phase3 = (() => {
 
         const programName = (project.name && project.name !== 'Untitled Program') ? project.name : '';
         const instructionStyle = project.instructionStyle || 'challenge';
-        const styleGuide = (typeof Settings !== 'undefined' && Settings.get('instructionStyleGuide')) || 'microsoft';
+        const customStyleUrl = (typeof Settings !== 'undefined' && Settings.get('customStyleGuideUrl')) || '';
+        const hasCustomGuide = !!customStyleUrl;
+        const savedGuide = (typeof Settings !== 'undefined' && Settings.get('instructionStyleGuide')) || '';
+        // Default to custom if one exists and user hasn't explicitly chosen something else
+        const styleGuide = savedGuide || (hasCustomGuide ? 'custom' : 'microsoft');
 
         const styleGuideLabels = {
             'microsoft': 'Microsoft Style Guide',
@@ -258,12 +262,13 @@ const Phase3 = (() => {
                 </div>
                 <div class="style-radio-group" style="margin-top:14px;">
                     <label class="form-label">Writing Style Guide</label>
+                    ${hasCustomGuide ? _radioOption('style-guide', 'custom', 'Custom Style Guide', customStyleUrl, styleGuide) : ''}
                     ${_radioOption('style-guide', 'microsoft', 'Microsoft Style Guide', 'Warm, relaxed tone. Second person. Short sentences. Action-oriented.', styleGuide)}
                     ${_radioOption('style-guide', 'apple', 'Apple Style Guide', 'Friendly, straightforward. Avoid technical terms when possible.', styleGuide)}
                     ${_radioOption('style-guide', 'redhat', 'Red Hat Documentation Guide', 'Precise, consistent terminology. Modular, task-based structure.', styleGuide)}
                     ${_radioOption('style-guide', 'digitalocean', 'DigitalOcean Technical Writing Guidelines', 'Tutorial-focused. Clear structure, practical examples, action-oriented steps.', styleGuide)}
                     ${_radioOption('style-guide', 'ibm', 'IBM Style Guide', 'Enterprise-grade clarity. Consistent terminology, structured for technical depth.', styleGuide)}
-                    ${_radioOption('style-guide', 'custom', 'Add a Custom Style Guide in Settings', '', styleGuide)}
+                    ${!hasCustomGuide ? _radioOption('style-guide', 'custom', 'Add a Custom Style Guide in Settings', '', styleGuide) : ''}
                 </div>
             </div>
         `;
