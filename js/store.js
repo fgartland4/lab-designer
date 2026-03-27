@@ -35,7 +35,7 @@ const Store = (() => {
     function emptyProject(name) {
         return {
             id: generateId(),
-            name: name || 'Untitled Project',
+            name: name || 'Untitled Program',
             createdAt: now(),
             updatedAt: now(),
 
@@ -46,26 +46,30 @@ const Store = (() => {
             businessObjectives: [],   // strings
             learningObjectives: [],   // strings
             competencies: [],         // { id, name, description, source }
+            successCriteria: [],      // strings — what "done" looks like
+            technologyPlatform: '',   // e.g. "Azure", "Commvault", "Dragos"
+            documentationRefs: [],    // { id, url, title, notes }
+            scenarioSeeds: [],        // { id, title, description } — real-world scenario ideas
             phase1Chat: [],           // { role, content, timestamp }
 
-            // Phase 2: Design & Configure
-            curriculum: null,         // nested tree: { type, title, children[] }
+            // Phase 2: Design & Organize
+            programStructure: null,   // { labSeries: [{ id, title, description, labs: [{ id, title, description, activities: [{ id, title, description }] }] }] }
             framework: null,          // framework ID
             frameworkData: null,      // framework mapping details
-            labPlacements: [],        // { lessonId, labName, rationale, estimatedDuration }
             seatTime: { min: 45, max: 90 },
-            navOptions: {},           // { labNavStyle, brandingNotes }
+            instructionStyle: null,   // 'challenge' | 'step-by-step' | 'mixed'
             phase2Chat: [],
 
-            // Phase 3: Organize & Finalize
-            labBlueprints: [],        // { id, title, shortDescription, activities[], approved: { title, description, outline } }
-            draftInstructions: {},    // { labId: markdownContent }
+            // Phase 3: Draft & Finalize
+            labBlueprints: [],        // { id, labSeriesId, title, shortDescription, activities[], approved: { title, description, outline } }
+            draftInstructions: {},    // { labId: { activityId: markdownContent } }
             phase3Chat: [],
 
-            // Phase 4: Architect & Build
+            // Phase 4: Package & Export
             environmentTemplates: [], // { id, name, platform, vms[], cloudResources[], credentials[], dummyData[], licenses[] }
             billOfMaterials: [],      // { id, category, item, details, required }
             lifecycleScripts: {},     // { templateId: { platform, buildScript, teardownScript } }
+            scoringMethods: [],       // { id, labId, type: 'ai'|'script', scriptLanguage, script, description }
             exportHistory: [],        // { id, exportedAt, format, labCount }
             phase4Chat: [],
         };
@@ -308,17 +312,42 @@ const Store = (() => {
         });
     }
 
-    // ── Phase 2: Design & Configure helpers ────────────────────
+    // ── Phase 1: Additional helpers ─────────────────────────────
 
-    function updateCurriculum(projectId, curriculum) {
+    function addDocumentationRef(projectId, { url, title, notes }) {
         return mutateProject(projectId, project => {
-            project.curriculum = curriculum;
+            if (!Array.isArray(project.documentationRefs)) project.documentationRefs = [];
+            project.documentationRefs.push({
+                id: generateId(),
+                url,
+                title: title || url,
+                notes: notes || '',
+            });
         });
     }
 
-    function updateLabPlacements(projectId, labPlacements) {
+    function addScenarioSeed(projectId, { title, description }) {
         return mutateProject(projectId, project => {
-            project.labPlacements = labPlacements;
+            if (!Array.isArray(project.scenarioSeeds)) project.scenarioSeeds = [];
+            project.scenarioSeeds.push({
+                id: generateId(),
+                title,
+                description: description || '',
+            });
+        });
+    }
+
+    // ── Phase 2: Design & Organize helpers ────────────────────
+
+    function updateProgramStructure(projectId, programStructure) {
+        return mutateProject(projectId, project => {
+            project.programStructure = programStructure;
+        });
+    }
+
+    function setInstructionStyle(projectId, style) {
+        return mutateProject(projectId, project => {
+            project.instructionStyle = style;
         });
     }
 
@@ -379,6 +408,26 @@ const Store = (() => {
                 buildScript: buildScript || '',
                 teardownScript: teardownScript || '',
             };
+        });
+    }
+
+    function addScoringMethod(projectId, { labId, type, scriptLanguage, script, description }) {
+        return mutateProject(projectId, project => {
+            if (!Array.isArray(project.scoringMethods)) project.scoringMethods = [];
+            project.scoringMethods.push({
+                id: generateId(),
+                labId: labId || '',
+                type: type || 'script',           // 'ai' or 'script'
+                scriptLanguage: scriptLanguage || 'powershell',
+                script: script || '',
+                description: description || '',
+            });
+        });
+    }
+
+    function setScoringMethods(projectId, scoringMethods) {
+        return mutateProject(projectId, project => {
+            project.scoringMethods = scoringMethods;
         });
     }
 
@@ -443,10 +492,12 @@ const Store = (() => {
         addUrl,
         addAudience,
         addCompetency,
+        addDocumentationRef,
+        addScenarioSeed,
 
         // Phase 2
-        updateCurriculum,
-        updateLabPlacements,
+        updateProgramStructure,
+        setInstructionStyle,
 
         // Phase 3
         approveLabField,
@@ -456,6 +507,8 @@ const Store = (() => {
         addEnvironmentTemplate,
         setBOM,
         setLifecycleScript,
+        addScoringMethod,
+        setScoringMethods,
         addExportRecord,
 
         // Import/Export

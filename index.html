@@ -24,14 +24,9 @@
                 <hr class="sidebar-hairline">
             </div>
 
-            <!-- Program selector -->
+            <!-- Active program name (set conversationally in Phase 1) -->
             <div class="sidebar-program">
-                <label class="sidebar-program-label">Program</label>
-                <input type="text" id="program-name-input" class="program-name-input" value="" placeholder="Name your program..." title="Click to rename">
-                <div class="sidebar-program-list" id="program-list">
-                    <!-- Populated by JS -->
-                </div>
-                <button class="btn btn-sm btn-ghost sidebar-new-program" id="btn-new-program">+ New Program</button>
+                <input type="text" id="program-name-input" class="program-name-input" value="" placeholder="Program name..." title="Click to rename" style="display:none">
             </div>
 
             <!-- Phase navigation -->
@@ -81,7 +76,7 @@
                     <span class="sidebar-settings-icon">&#9881;</span>
                 </a>
                 <div class="sidebar-copyright">
-                    &copy; <script>document.write(new Date().getFullYear())</script> Skillable Inc. All rights reserved.
+                    Skillable&reg; | All rights reserved.
                 </div>
                 <script>console.log('Lab Program Designer v3.0.0');</script>
             </div>
@@ -134,7 +129,7 @@
                     <div class="chat-panel">
                         <div class="chat-header">
                             <h2>Design &amp; Organize</h2>
-                            <p class="chat-subtitle">Let's structure your content into courses, modules, lessons, and topics. Optionally map to a skill framework.</p>
+                            <p class="chat-subtitle">Let's structure your program into Lab Series, Labs, and Activities. I'll propose names using action verbs and help map to skill frameworks.</p>
                         </div>
                         <div class="chat-messages" id="phase2-chat-messages"></div>
                         <div class="chat-typing" id="phase2-chat-typing" style="display:none;">
@@ -158,8 +153,8 @@
                     <!-- Context Panel (right) -->
                     <div class="context-panel" id="phase2-context">
                         <div class="empty-state">
-                            <p>No curriculum generated yet.</p>
-                            <p class="hint">Complete Phase 1 or ask me to generate a curriculum structure from your goals.</p>
+                            <p>No program structure yet.</p>
+                            <p class="hint">Complete Phase 1, then ask me to generate a Lab Series and Labs structure from your objectives.</p>
                         </div>
                     </div>
                 </div>
@@ -172,7 +167,7 @@
                     <div class="chat-panel">
                         <div class="chat-header">
                             <h2>Draft &amp; Finalize</h2>
-                            <p class="chat-subtitle">Finalize lab blueprints, approve activities, and generate draft instructions.</p>
+                            <p class="chat-subtitle">Draft per-activity instructions following your chosen style guide. Review, edit inline, and finalize.</p>
                         </div>
                         <div class="chat-messages" id="phase3-chat-messages"></div>
                         <div class="chat-typing" id="phase3-chat-typing" style="display:none;">
@@ -196,8 +191,8 @@
                     <!-- Context Panel (right) -->
                     <div class="context-panel" id="phase3-context">
                         <div class="empty-state">
-                            <p>No lab blueprints yet.</p>
-                            <p class="hint">Complete Phase 2 to generate lab placements, or use the chat to create lab blueprints.</p>
+                            <p>No draft instructions yet.</p>
+                            <p class="hint">Complete Phase 2 to define your program structure, then draft per-activity instructions here.</p>
                         </div>
                     </div>
                 </div>
@@ -210,7 +205,7 @@
                     <div class="chat-panel">
                         <div class="chat-header">
                             <h2>Package &amp; Export</h2>
-                            <p class="chat-subtitle">Design environment templates, generate bills of materials, and write lifecycle scripts.</p>
+                            <p class="chat-subtitle">Define environments, scoring methods, lifecycle scripts, and export to Skillable Studio.</p>
                         </div>
                         <div class="chat-messages" id="phase4-chat-messages"></div>
                         <div class="chat-typing" id="phase4-chat-typing" style="display:none;">
@@ -234,8 +229,8 @@
                     <!-- Context Panel (right) -->
                     <div class="context-panel" id="phase4-context">
                         <div class="empty-state">
-                            <p>No environment templates yet.</p>
-                            <p class="hint">Complete Phase 3 or use the chat to generate environment configurations.</p>
+                            <p>Ready to package.</p>
+                            <p class="hint">Define environment templates, scoring methods, and export your program to Skillable Studio.</p>
                         </div>
                     </div>
                 </div>
@@ -310,6 +305,41 @@
                                     <option value="advanced">Advanced</option>
                                     <option value="expert">Expert</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <!-- Lab Naming Formula -->
+                        <div class="settings-section">
+                            <div class="settings-section-header">
+                                <h3>Lab Naming Formula</h3>
+                                <span class="settings-section-hint">Define the default pattern for AI-proposed lab names. Use placeholders like {Verb}, {Specific Action}, {Product Name}.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="settings-naming-formula">Formula</label>
+                                <input type="text" id="settings-naming-formula" placeholder="{Verb} {Specific Action} {Product Name}" value="{Verb} {Specific Action} {Product Name}">
+                                <span class="form-hint">Example result: "Configure Virtual Network Peering in Azure"</span>
+                            </div>
+                        </div>
+
+                        <!-- Instruction Style Guide -->
+                        <div class="settings-section">
+                            <div class="settings-section-header">
+                                <h3>Instruction Style Guide</h3>
+                                <span class="settings-section-hint">Choose a documentation style standard for generated lab instructions.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="settings-style-guide">Style Guide</label>
+                                <select id="settings-style-guide">
+                                    <option value="microsoft">Microsoft Style Guide</option>
+                                    <option value="google">Google Developer Documentation Style Guide</option>
+                                    <option value="apple">Apple Style Guide</option>
+                                    <option value="redhat">Red Hat Documentation Guide</option>
+                                    <option value="custom">Custom (provide URL)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="settings-custom-style-group" style="display:none;">
+                                <label for="settings-custom-style-url">Custom Style Guide URL</label>
+                                <input type="text" id="settings-custom-style-url" placeholder="https://your-company.com/style-guide">
                             </div>
                         </div>
 

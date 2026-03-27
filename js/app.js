@@ -1,7 +1,9 @@
 /**
- * app.js — Thin orchestrator for Lab Program Designer v3.0.0.
+ * app.js — Thin orchestrator for Lab Program Designer v3.
  * Handles navigation, project management, chat dispatch, settings binding,
  * and import/export. Delegates rendering to Phase1-4 controllers.
+ *
+ * Program selection is handled conversationally in Phase 1 — no sidebar widget.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -38,16 +40,16 @@ document.addEventListener('DOMContentLoaded', () => {
         Settings.load();
 
         bindNavigation();
-        bindProgramControls();
         bindChat('phase1');
         bindChat('phase2');
         bindChat('phase3');
         bindChat('phase4');
         bindFileUpload();
         bindSettings();
+        bindProgramName();
 
-        // Load active project or create first one
-        loadOrCreateProject();
+        // Load active project (don't auto-create — Phase 1 conversation handles that)
+        loadActiveProject();
         renderAll();
         renderChatHistory('phase1');
         showWelcomeIfNeeded();
@@ -90,188 +92,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  Program Management (sidebar)
-    // ══════════════════════════════════════════════════════════════
-
-    function loadOrCreateProject() {
-        currentProject = Store.getActiveProject();
-        if (!currentProject) {
-            currentProject = Store.createProject('Untitled Program');
-        }
-        renderProgramSelector();
-    }
-
-    function loadProject(projectId) {
-        Store.setActiveProject(projectId);
-        currentProject = Store.getActiveProject();
-        if (!currentProject) return;
-
-        // Update name input
-        const nameInput = $('#program-name-input');
-        if (nameInput) nameInput.value = currentProject.name;
-
-        clearAllChats();
-        renderAll();
-        restoreAllChats();
-        renderProgramSelector();
-        showWelcomeIfNeeded();
-    }
-
-    function renderProgramSelector() {
-        const nameInput = $('#program-name-input');
-        if (nameInput && currentProject) {
-            nameInput.value = currentProject.name;
-        }
-
-        const list = $('#program-list');
-        if (!list) return;
-
-        const projects = Store.listProjects();
-        if (projects.length <= 1) {
-            list.innerHTML = '';
-            return;
-        }
-
-        list.innerHTML = projects.map(p => `
-            <div class="sidebar-program-item ${p.id === (currentProject && currentProject.id) ? 'active' : ''}" data-project-id="${p.id}">
-                <span class="program-item-name">${escHtml(p.name)}</span>
-                <button class="program-item-delete" data-delete-id="${p.id}" title="Delete">&times;</button>
-            </div>
-        `).join('');
-
-        // Bind clicks
-        list.querySelectorAll('.sidebar-program-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                if (e.target.closest('.program-item-delete')) return;
-                loadProject(item.dataset.projectId);
-            });
-        });
-
-        // Bind delete
-        list.querySelectorAll('.program-item-delete').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const id = btn.dataset.deleteId;
-                const project = Store.getProject(id);
-                if (!project) return;
-                if (!confirm(`Delete "${project.name}"?`)) return;
-                Store.deleteProject(id);
-
-                // If we deleted the active project, switch to another
-                if (currentProject && currentProject.id === id) {
-                    currentProject = Store.getActiveProject();
-                    if (!currentProject) {
-                        currentProject = Store.createProject('Untitled Program');
-                    }
-                    clearAllChats();
-                    renderAll();
-                    restoreAllChats();
-                    showWelcomeIfNeeded();
-                }
-                renderProgramSelector();
-            });
-        });
-    }
-
-    function bindProgramControls() {
-        // Program name editing
-        const nameInput = $('#program-name-input');
-        if (nameInput) {
-            const saveName = () => {
-                if (!currentProject) return;
-                const newName = nameInput.value.trim() || 'Untitled Program';
-                nameInput.value = newName;
-                currentProject.name = newName;
-                Store.updateProject(currentProject);
-                renderProgramSelector();
-            };
-            nameInput.addEventListener('blur', saveName);
-            nameInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    nameInput.blur();
-                }
-            });
-        }
-
-        // New program button
-        const newBtn = $('#btn-new-program');
-        if (newBtn) {
-            newBtn.addEventListener('click', () => {
-                currentProject = Store.createProject('Untitled Program');
-                loadProject(currentProject.id);
-                // Focus the name input so they can immediately type a name
-                const ni = $('#program-name-input');
-                if (ni) { ni.select(); ni.focus(); }
-            });
-        }
-
-        // Sidebar export/import
-        const exportBtn = $('#btn-export');
-        const importBtn = $('#btn-import');
-        const importFile = $('#import-file');
-
-        if (exportBtn) exportBtn.addEventListener('click', () => exportProject());
-        if (importBtn) importBtn.addEventListener('click', () => importFile && importFile.click());
-        if (importFile) {
-            importFile.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                importProjectFromFile(file);
-                e.target.value = '';
-            });
-        }
-    }
-
-    // ══════════════════════════════════════════════════════════════
     //  Project Management
     // ══════════════════════════════════════════════════════════════
 
-    function bindProgramControls() {
-        // Back to programs
-        const backBtn = $('#btn-back-to-programs');
-        if (backBtn) {
-            backBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                showHomeScreen();
-            });
+    function loadActiveProject() {
+        currentProject = Store.getActiveProject();
+        if (!currentProject) {
+            // Create a default project — Phase 1 conversation will name it
+            currentProject = Store.createProject('Untitled Program');
         }
+        updateProgramNameDisplay();
+    }
 
-        // Program name editing
+    function updateProgramNameDisplay() {
         const nameInput = $('#program-name-input');
-        if (nameInput) {
-            const saveName = () => {
-                if (!currentProject) return;
-                const newName = nameInput.value.trim() || 'Untitled Program';
-                nameInput.value = newName;
-                currentProject.name = newName;
-                Store.updateProject(currentProject);
-            };
-            nameInput.addEventListener('blur', saveName);
-            nameInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    nameInput.blur();
-                }
-            });
-        }
-
-        // Sidebar export/import
-        const exportBtn = $('#btn-export');
-        const importBtn = $('#btn-import');
-        const importFile = $('#import-file');
-
-        if (exportBtn) exportBtn.addEventListener('click', () => exportProject());
-        if (importBtn) importBtn.addEventListener('click', () => importFile && importFile.click());
-        if (importFile) {
-            importFile.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                importProjectFromFile(file);
-                e.target.value = '';
-            });
+        if (nameInput && currentProject) {
+            nameInput.value = currentProject.name;
+            // Show the name input once a project is active
+            if (currentProject.name && currentProject.name !== 'Untitled Program') {
+                nameInput.style.display = '';
+            }
         }
     }
+
+    function bindProgramName() {
+        const nameInput = $('#program-name-input');
+        if (!nameInput) return;
+
+        const saveName = () => {
+            if (!currentProject) return;
+            const newName = nameInput.value.trim() || 'Untitled Program';
+            nameInput.value = newName;
+            currentProject.name = newName;
+            Store.updateProject(currentProject);
+        };
+
+        nameInput.addEventListener('blur', saveName);
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nameInput.blur();
+            }
+        });
+    }
+
+    /**
+     * Called by Phase 1 AI results when the program is named conversationally.
+     */
+    function setProgramName(name) {
+        if (!currentProject) return;
+        currentProject.name = name;
+        Store.updateProject(currentProject);
+        const nameInput = $('#program-name-input');
+        if (nameInput) {
+            nameInput.value = name;
+            nameInput.style.display = '';
+        }
+    }
+
+    // Expose for Phase1 to call
+    window._appSetProgramName = setProgramName;
 
     // ══════════════════════════════════════════════════════════════
     //  Chat Handling (shared across phases)
@@ -370,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Update progress indicators
             updateProgressIndicators();
+            updateProgramNameDisplay();
         } catch (err) {
             hideTypingIndicator(phaseKey);
             renderChatMessage(phaseKey, 'assistant', `Error: ${err.message}`);
@@ -421,16 +302,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showWelcomeIfNeeded() {
+        if (!currentProject) return;
         const history = Store.getChatHistory(currentProject.id, 'phase1');
         if (history.length === 0) {
-            renderChatMessage('phase1', 'assistant',
-                `Welcome to Lab Program Designer! I'm here to help you create a hands-on lab training program.\n\n` +
-                `Let's start by understanding what your learners need to be able to do. You can:\n\n` +
-                `- **Upload documents** like job task analyses, job descriptions, or learning objectives using the paperclip icon\n` +
-                `- **Tell me about your program** — what technology, platform, or product are your learners using? Who is the target audience?\n` +
-                `- **Paste objectives** directly into the chat\n\n` +
-                `What are you building training for?`
-            );
+            const existingProjects = Store.listProjects();
+            if (existingProjects.length > 1) {
+                // There are existing programs — offer to continue or start fresh
+                const programNames = existingProjects
+                    .filter(p => p.id !== currentProject.id && p.name !== 'Untitled Program')
+                    .map(p => `- **${p.name}**`)
+                    .join('\n');
+
+                renderChatMessage('phase1', 'assistant',
+                    `Welcome back to Lab Program Designer!\n\n` +
+                    `You have existing programs:\n${programNames}\n\n` +
+                    `Would you like to **continue working on one of these**, or **start a new program**?\n\n` +
+                    `If starting new, tell me:\n` +
+                    `- What technology, platform, or product are your learners using?\n` +
+                    `- Who is the target audience?\n` +
+                    `- What should learners be able to do after completing the training?`
+                );
+            } else {
+                renderChatMessage('phase1', 'assistant',
+                    `Welcome to Lab Program Designer! I'm here to help you create a hands-on lab training program.\n\n` +
+                    `Let's start by understanding your program. You can:\n\n` +
+                    `- **Tell me about your program** — what technology, platform, or product are your learners using? Who is the target audience?\n` +
+                    `- **Upload documents** like job task analyses, job descriptions, or learning objectives using the paperclip icon\n` +
+                    `- **Paste objectives** directly into the chat\n` +
+                    `- **Share documentation links** for the product or platform your labs will focus on\n\n` +
+                    `What are you building training for?`
+                );
+            }
         }
     }
 
@@ -516,21 +418,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const p1Complete = p1HasData && currentProject.competencies && currentProject.competencies.length > 0;
         setProgressIcon('phase1', p1Complete ? 'check' : (p1HasData ? 'half' : 'empty'));
 
-        // Phase 2: has curriculum
-        const p2HasData = currentProject.curriculum &&
-            (currentProject.curriculum.children || currentProject.curriculum.courses || []).length > 0;
-        const p2Complete = p2HasData && currentProject.labPlacements && currentProject.labPlacements.length > 0;
+        // Phase 2: has program structure
+        const p2HasData = currentProject.programStructure &&
+            currentProject.programStructure.labSeries &&
+            currentProject.programStructure.labSeries.length > 0;
+        const p2Complete = p2HasData && currentProject.instructionStyle;
         setProgressIcon('phase2', p2Complete ? 'check' : (p2HasData ? 'half' : 'empty'));
 
-        // Phase 3: has lab blueprints
+        // Phase 3: has lab blueprints with instructions
         const p3HasData = currentProject.labBlueprints && currentProject.labBlueprints.length > 0;
-        const p3Complete = p3HasData && currentProject.labBlueprints.every(b =>
-            b.approved && b.approved.title && b.approved.description && b.approved.outline
-        );
+        const p3Complete = p3HasData && currentProject.draftInstructions &&
+            Object.keys(currentProject.draftInstructions).length > 0;
         setProgressIcon('phase3', p3Complete ? 'check' : (p3HasData ? 'half' : 'empty'));
 
-        // Phase 4: has environment templates
-        const p4HasData = currentProject.environmentTemplates && currentProject.environmentTemplates.length > 0;
+        // Phase 4: has environment templates or export
+        const p4HasData = (currentProject.environmentTemplates && currentProject.environmentTemplates.length > 0) ||
+            (currentProject.scoringMethods && currentProject.scoringMethods.length > 0);
         const p4Complete = p4HasData && currentProject.exportHistory && currentProject.exportHistory.length > 0;
         setProgressIcon('phase4', p4Complete ? 'check' : (p4HasData ? 'half' : 'empty'));
     }
@@ -569,6 +472,17 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#settings-activities-per-lab').value = s.activitiesPerLab || 5;
         $('#settings-default-difficulty').value = s.defaultDifficulty || 'intermediate';
 
+        // Naming formula
+        const namingInput = $('#settings-naming-formula');
+        if (namingInput) namingInput.value = s.labNamingFormula || '{Verb} {Specific Action} {Product Name}';
+
+        // Style guide
+        const styleSelect = $('#settings-style-guide');
+        if (styleSelect) styleSelect.value = s.instructionStyleGuide || 'microsoft';
+        const customUrlInput = $('#settings-custom-style-url');
+        if (customUrlInput) customUrlInput.value = s.customStyleGuideUrl || '';
+        toggleCustomStyleField(s.instructionStyleGuide);
+
         // Branding
         $('#settings-branding-source-url').value = s.brandingSourceUrl || '';
         $('#settings-font-heading').value = (s.brandFonts && s.brandFonts.heading) || '';
@@ -602,6 +516,14 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#settings-ai-provider').addEventListener('change', (e) => {
             toggleEndpointField(e.target.value);
         });
+
+        // Style guide change
+        const styleSelect = $('#settings-style-guide');
+        if (styleSelect) {
+            styleSelect.addEventListener('change', (e) => {
+                toggleCustomStyleField(e.target.value);
+            });
+        }
 
         // Toggle key visibility
         $('#settings-toggle-key').addEventListener('click', () => {
@@ -714,6 +636,17 @@ document.addEventListener('DOMContentLoaded', () => {
         Settings.set('defaultSeatTime', parseInt($('#settings-default-seat-time').value) || 45);
         Settings.set('activitiesPerLab', parseInt($('#settings-activities-per-lab').value) || 5);
         Settings.set('defaultDifficulty', $('#settings-default-difficulty').value);
+
+        // Naming formula
+        const namingInput = $('#settings-naming-formula');
+        if (namingInput) Settings.set('labNamingFormula', namingInput.value);
+
+        // Style guide
+        const styleSelect = $('#settings-style-guide');
+        if (styleSelect) Settings.set('instructionStyleGuide', styleSelect.value);
+        const customUrlInput = $('#settings-custom-style-url');
+        if (customUrlInput) Settings.set('customStyleGuideUrl', customUrlInput.value);
+
         Settings.set('brandingSourceUrl', $('#settings-branding-source-url').value);
         Settings.set('brandColors', {
             primary: $('#settings-color-primary').value,
@@ -732,6 +665,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleEndpointField(provider) {
         const group = $('#settings-endpoint-group');
         if (group) group.style.display = provider === 'custom' ? 'block' : 'none';
+    }
+
+    function toggleCustomStyleField(styleGuide) {
+        const group = $('#settings-custom-style-group');
+        if (group) group.style.display = styleGuide === 'custom' ? 'block' : 'none';
     }
 
     function renderReferences(refs) {
@@ -778,10 +716,10 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = (ev) => {
             try {
                 currentProject = Store.importProject(ev.target.result);
-                renderProjectSelector();
                 clearAllChats();
                 restoreAllChats();
                 renderAll();
+                updateProgramNameDisplay();
             } catch (err) {
                 alert('Import failed: ' + err.message);
             }

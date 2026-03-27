@@ -26,6 +26,13 @@ const Settings = (() => {
         activitiesPerLab: 5,
         defaultDifficulty: 'intermediate',
 
+        // Lab Naming Formula
+        labNamingFormula: '{Verb} {Specific Action} {Product Name}',
+
+        // Instruction Style Guide
+        instructionStyleGuide: 'microsoft',  // 'microsoft' | 'google' | 'apple' | 'redhat' | 'custom'
+        customStyleGuideUrl: '',
+
         // Branding
         logoUrl: '',
         brandingSourceUrl: '',

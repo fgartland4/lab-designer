@@ -3,6 +3,8 @@
  * Handles AI conversations across 4 phases with phase-specific system prompts,
  * context injection from prior phases, and structured output parsing.
  *
+ * Data model: Lab Series → Labs → Activities (not Courses/Modules/Lessons/Topics).
+ *
  * Depends on: Store, Settings, Catalog, Frameworks (all global IIFEs).
  */
 
@@ -24,13 +26,13 @@ const Chat = (() => {
     // ── Structured output markers ───────────────────────────────
 
     const MARKERS = {
-        1: { start: '===GOALS_SUMMARY===',      end: '===END_GOALS_SUMMARY===' },
-        2: { start: '===CURRICULUM===',          end: '===END_CURRICULUM===' },
+        1: { start: '===PHASE1_DATA===',          end: '===END_PHASE1_DATA===' },
+        2: { start: '===PROGRAM_STRUCTURE===',     end: '===END_PROGRAM_STRUCTURE===' },
         3: [
-            { start: '===LAB_BLUEPRINTS===',      end: '===END_LAB_BLUEPRINTS===' },
-            { start: '===DRAFT_INSTRUCTIONS===',   end: '===END_DRAFT_INSTRUCTIONS===' },
+            { start: '===LAB_BLUEPRINTS===',       end: '===END_LAB_BLUEPRINTS===' },
+            { start: '===DRAFT_INSTRUCTIONS===',    end: '===END_DRAFT_INSTRUCTIONS===' },
         ],
-        4: { start: '===ENVIRONMENT===',          end: '===END_ENVIRONMENT===' },
+        4: { start: '===ENVIRONMENT===',           end: '===END_ENVIRONMENT===' },
     };
 
     // ── System prompt builders ──────────────────────────────────
@@ -41,7 +43,7 @@ const Chat = (() => {
 
         switch (phase) {
             case 1:
-                prompt = _phase1Prompt();
+                prompt = _phase1Prompt(context);
                 break;
             case 2:
                 prompt = _phase2Prompt(seatTime, context);
@@ -59,48 +61,127 @@ const Chat = (() => {
         return prompt;
     }
 
-    function _phase1Prompt() {
-        return `You are an expert instructional designer. Help the user define their target audiences, business objectives, and learning objectives. When they upload documents (JTAs, job descriptions, task lists), extract competencies and organize them. Ask clarifying questions about who the learners are, what they need to do on the job, and what success looks like. When you have enough info, output a structured block:
+    function _phase1Prompt(context) {
+        return `You are an expert instructional designer helping create a hands-on lab training program. Your role in this phase is to gather comprehensive information about the program.
+
+CONVERSATION FLOW:
+1. If this is a new conversation, ask what technology/platform/product the training is for and who the target audience is.
+2. Gather: target audiences (roles, responsibilities, prerequisites), business objectives, learning objectives, success criteria, and the technology/platform being taught.
+3. Ask for documentation links — this is critical for specialized software (Commvault, Dragos, Hyland, OneStream, etc.) that you may not have deep knowledge of.
+4. Explore real-world scenario ideas that could become authentic lab exercises.
+5. When you feel you have enough information, ask probing questions like "Is there anything else I should know about your learners or the technology?" and "Are there common mistakes or misconceptions learners face?"
+6. Let the person know they can always come back and add more details later.
+
+PROGRAM NAMING:
+- If the user hasn't named their program yet, suggest a clear, descriptive name based on what they've described.
+- Include the program name in your structured output when you have one.
+
+When you have gathered sufficient information, output a structured block:
 \`\`\`
-===GOALS_SUMMARY===
-{ "audiences": [...], "businessObjectives": [...], "learningObjectives": [...], "competencies": [...] }
-===END_GOALS_SUMMARY===
+===PHASE1_DATA===
+{ "programName": "...", "audiences": [{ "role": "...", "responsibilities": "...", "prerequisites": "..." }], "businessObjectives": ["..."], "learningObjectives": ["..."], "competencies": [{ "name": "...", "description": "...", "source": "AI-extracted" }], "successCriteria": ["..."], "technologyPlatform": "...", "documentationRefs": [{ "url": "...", "title": "...", "notes": "..." }], "scenarioSeeds": [{ "title": "...", "description": "..." }] }
+===END_PHASE1_DATA===
 \`\`\`
 
-Only include this block when you feel confident you have enough information. Continue the conversation naturally otherwise.`;
+Only include this block when you have meaningful data to contribute. Continue the conversation naturally otherwise. You can output partial data blocks as information is gathered — they will be merged.`;
     }
 
     function _phase2Prompt(seatTime, context) {
-        let prompt = `You are an expert curriculum architect. Based on the objectives and competencies from Phase 1, design a curriculum hierarchy (Courses > Modules > Lessons > Topics). Recommend where hands-on labs should be placed. Each lab should target ${seatTime} minutes of seat time.`;
+        const namingFormula = Settings.get('labNamingFormula') || '{Verb} {Specific Action} {Product Name}';
+
+        let prompt = `You are an expert curriculum architect designing a hands-on lab training program. Based on the objectives and competencies from Phase 1, design a program structure using this hierarchy:
+
+HIERARCHY: Lab Series → Labs → Activities
+- A Lab Series is a collection of related labs (like a course)
+- A Lab is a single hands-on session targeting ${seatTime} minutes of seat time
+- An Activity is a discrete task within a lab (3-6 per lab)
+
+LAB NAMING:
+Lab naming is critical. Use this formula: ${namingFormula}
+- Always start lab names with an action verb (Configure, Deploy, Implement, Analyze, Troubleshoot, etc.)
+- Names should be specific and descriptive — avoid vague titles
+- Example good names: "Configure Virtual Network Peering in Azure", "Deploy a Containerized Application with Kubernetes", "Troubleshoot Active Directory Replication Issues"
+- Example bad names: "Azure Networking Lab", "Container Lab 1", "AD Lab"
+
+Be opinionated — propose strong names. The program owner can refine them.`;
 
         if (context.frameworkId) {
-            prompt += ` When a skill framework is selected, map curriculum items to framework competencies.`;
+            prompt += `\n\nWhen a skill framework is selected, map labs and activities to framework competencies where appropriate.`;
         }
 
-        prompt += ` Consider the built-in knowledge base for lab templates and environment presets. Output:
+        prompt += `\n\nAt the end of this phase, ask the program owner about their preferred instruction style:
+- **Challenge-based**: Give learners a goal and let them figure out the steps
+- **Step-by-step**: Detailed numbered instructions for each task
+- **Mixed**: Challenge-based for some activities, step-by-step for others
+
+Output the program structure as:
 \`\`\`
-===CURRICULUM===
-{ "courses": [{ "title": "...", "modules": [{ "title": "...", "lessons": [{ "title": "...", "topics": [...], "lab": { "name": "...", "rationale": "...", "estimatedDuration": 0 } | null }] }] }] }
-===END_CURRICULUM===
+===PROGRAM_STRUCTURE===
+{ "labSeries": [{ "id": "ls-1", "title": "...", "description": "...", "labs": [{ "id": "lab-1", "title": "...", "description": "...", "estimatedDuration": ${seatTime}, "activities": [{ "id": "act-1", "title": "...", "description": "..." }] }] }], "instructionStyle": "step-by-step" }
+===END_PROGRAM_STRUCTURE===
 \`\`\`
 
-Not every lesson needs a lab. Labs should be placed where hands-on practice is most valuable. Be helpful when the designer wants to consolidate, rename, or reorganize items.`;
+Be helpful when the designer wants to rename, reorganize, add, or remove items. Inline editing handles quick fixes — use chat for structural changes.`;
 
         return prompt;
     }
 
     function _phase3Prompt(seatTime, context) {
-        let prompt = `You are an expert lab designer for Skillable. Help finalize lab blueprints. For each lab, confirm the title, write a short description (2-3 sentences), and outline activities (each activity has a title, tasks list, and estimated duration). Activities should have clear action-oriented titles. When asked, generate DRAFT instructions in markdown format with step-by-step guidance. Default lab duration is ${seatTime} minutes. Output:
+        const styleGuide = Settings.get('instructionStyleGuide') || 'microsoft';
+        const customStyleUrl = Settings.get('customStyleGuideUrl') || '';
+        const instructionStyle = context.instructionStyle || 'step-by-step';
+
+        let styleRef = '';
+        switch (styleGuide) {
+            case 'microsoft':
+                styleRef = 'Follow the Microsoft Style Guide for technical documentation.';
+                break;
+            case 'google':
+                styleRef = 'Follow the Google Developer Documentation Style Guide.';
+                break;
+            case 'apple':
+                styleRef = 'Follow the Apple Style Guide for technical writing.';
+                break;
+            case 'redhat':
+                styleRef = 'Follow the Red Hat Documentation Guide for technical content.';
+                break;
+            case 'custom':
+                styleRef = customStyleUrl
+                    ? `Follow the custom style guide at: ${customStyleUrl}`
+                    : 'Follow standard technical documentation best practices.';
+                break;
+            default:
+                styleRef = 'Follow the Microsoft Style Guide for technical documentation.';
+        }
+
+        let prompt = `You are an expert lab content writer for Skillable. Draft detailed per-activity instructions for each lab. ${styleRef}
+
+INSTRUCTION STYLE: ${instructionStyle}
+${instructionStyle === 'challenge' ? '- Give learners a goal/scenario and hints, but let them figure out the steps' : ''}
+${instructionStyle === 'step-by-step' ? '- Provide detailed numbered steps with expected outcomes after each step' : ''}
+${instructionStyle === 'mixed' ? '- Use challenge-based for intermediate/advanced activities, step-by-step for beginner activities' : ''}
+
+FOR EACH ACTIVITY, INCLUDE:
+- Clear heading with the activity title
+- Introduction explaining what the learner will accomplish
+- Numbered steps with specific actions (click this, type that, navigate here)
+- Expected outcomes or verification steps after key actions
+- Notes, tips, or warnings where appropriate
+- A brief summary at the end
+
+Default lab duration is ${seatTime} minutes. Each activity's instructions should be proportional to its estimated duration.
+
+When generating lab blueprints, output:
 \`\`\`
 ===LAB_BLUEPRINTS===
 [{ "id": "...", "title": "...", "shortDescription": "...", "estimatedDuration": 0, "activities": [{ "title": "...", "tasks": [...], "duration": 0 }] }]
 ===END_LAB_BLUEPRINTS===
 \`\`\`
 
-And for draft instructions:
+When generating draft instructions for a specific activity, output:
 \`\`\`
 ===DRAFT_INSTRUCTIONS===
-{ "labId": "...", "markdown": "..." }
+{ "labId": "...", "activityId": "...", "markdown": "..." }
 ===END_DRAFT_INSTRUCTIONS===
 \`\`\``;
 
@@ -114,14 +195,32 @@ And for draft instructions:
     }
 
     function _phase4Prompt(context) {
-        return `You are an expert cloud/lab environment architect for Skillable. Design environment templates, generate bills of materials, and write lifecycle scripts. For each lab or group of labs, specify: VMs needed (OS, RAM, software), cloud resources (subscriptions, resource groups), credentials, dummy/practice data files to generate, required licenses. Write platform-specific PowerShell or Bash lifecycle scripts for provisioning. Output:
+        return `You are an expert cloud/lab environment architect for Skillable. In this phase, help with:
+
+1. ENVIRONMENT TEMPLATES: Design reusable environment configurations. For each template specify:
+   - VMs needed (OS, RAM, CPU, disk, installed software)
+   - Cloud resources (subscriptions, resource groups, storage, networking)
+   - Credentials and access accounts
+   - Dummy/practice data files to pre-populate
+   - Required licenses or permissions
+
+2. SCORING METHODS: Define how lab completion is validated. Two types supported:
+   - **AI-based scoring**: Define rubrics and criteria for AI to evaluate learner work
+   - **Script-based scoring**: Write PowerShell or Bash scripts that use product APIs to verify task completion
+   NOTE: Do NOT suggest manual scoring — only AI-based or script-based.
+
+3. LIFECYCLE SCRIPTS: Write build and teardown scripts for provisioning/cleaning environments.
+
+4. BILL OF MATERIALS: Itemize everything needed to run the labs at scale.
+
+Focus on environment reusability — multiple labs should share the same template whenever possible.
+
+Output structured data as:
 \`\`\`
 ===ENVIRONMENT===
-{ "templates": [...], "billOfMaterials": [...], "lifecycleScripts": { "templateId": { "platform": "...", "buildScript": "...", "teardownScript": "..." } } }
+{ "templates": [...], "billOfMaterials": [...], "lifecycleScripts": { "templateId": { "platform": "...", "buildScript": "...", "teardownScript": "..." } }, "scoringMethods": [{ "labId": "...", "type": "ai|script", "scriptLanguage": "powershell|bash", "script": "...", "description": "..." }] }
 ===END_ENVIRONMENT===
-\`\`\`
-
-Focus on environment reusability. Multiple labs should share the same environment template whenever possible — the environment is the hardest part, so reusability is critical.`;
+\`\`\``;
     }
 
     // ── Context helpers ─────────────────────────────────────────
@@ -149,9 +248,12 @@ Focus on environment reusability. Multiple labs should share the same environmen
         return parts.length ? parts.join('\n') : null;
     }
 
-    function _getGoalsSummaryContext(project) {
+    function _getPhase1Context(project) {
         const parts = [];
 
+        if (project.technologyPlatform) {
+            parts.push('Technology/Platform: ' + project.technologyPlatform);
+        }
         if (project.audiences && project.audiences.length) {
             parts.push('Target audiences: ' + project.audiences.map(a => a.role).join(', '));
         }
@@ -163,6 +265,15 @@ Focus on environment reusability. Multiple labs should share the same environmen
         }
         if (project.competencies && project.competencies.length) {
             parts.push('Competencies: ' + project.competencies.map(c => c.name).join(', '));
+        }
+        if (project.successCriteria && project.successCriteria.length) {
+            parts.push('Success criteria: ' + project.successCriteria.join('; '));
+        }
+        if (project.documentationRefs && project.documentationRefs.length) {
+            parts.push('Documentation references: ' + project.documentationRefs.map(d => d.title || d.url).join(', '));
+        }
+        if (project.scenarioSeeds && project.scenarioSeeds.length) {
+            parts.push('Scenario ideas: ' + project.scenarioSeeds.map(s => s.title).join(', '));
         }
 
         return parts.length ? parts.join('\n') : null;
@@ -192,7 +303,6 @@ Focus on environment reusability. Multiple labs should share the same environmen
             if (typeof Catalog !== 'undefined' && typeof Catalog.toPromptContext === 'function') {
                 return Catalog.toPromptContext();
             }
-            // Fallback: build a lightweight summary from Catalog.getDomains()
             if (typeof Catalog !== 'undefined' && typeof Catalog.getDomains === 'function') {
                 const domains = Catalog.getDomains();
                 if (domains && domains.length) {
@@ -204,7 +314,7 @@ Focus on environment reusability. Multiple labs should share the same environmen
                 }
             }
         } catch {
-            // Catalog not available, no context to inject
+            // Catalog not available
         }
         return null;
     }
@@ -220,6 +330,7 @@ Focus on environment reusability. Multiple labs should share the same environmen
                 ? `${project.seatTime.min}-${project.seatTime.max}`
                 : Settings.get('defaultSeatTime') || 45,
             frameworkId: project.framework,
+            instructionStyle: project.instructionStyle || 'step-by-step',
         };
 
         const messages = [];
@@ -241,7 +352,7 @@ Focus on environment reusability. Multiple labs should share the same environmen
     }
 
     function _injectPhaseContext(messages, phase, project) {
-        // Phase 1 uploads context (always available in phase 1 itself)
+        // Phase 1 uploads context
         if (phase === 1 && project.uploads && project.uploads.length) {
             const uploadContent = project.uploads
                 .filter(u => u.content)
@@ -255,13 +366,13 @@ Focus on environment reusability. Multiple labs should share the same environmen
             }
         }
 
-        // Phase 2 gets: Phase 1 goals, framework, catalog
+        // Phase 2+ gets Phase 1 context
         if (phase >= 2) {
-            const goals = _getGoalsSummaryContext(project);
-            if (goals) {
+            const p1Context = _getPhase1Context(project);
+            if (p1Context) {
                 messages.push({
                     role: 'system',
-                    content: `Context from Phase 1 (Audiences & Objectives):\n${goals}`,
+                    content: `Context from Phase 1 (Audiences & Objectives):\n${p1Context}`,
                 });
             }
         }
@@ -282,19 +393,19 @@ Focus on environment reusability. Multiple labs should share the same environmen
             }
         }
 
-        // Phase 3 gets: Phase 2 curriculum
-        if (phase >= 3 && project.curriculum) {
+        // Phase 3+ gets Phase 2 program structure
+        if (phase >= 3 && project.programStructure) {
             messages.push({
                 role: 'system',
-                content: `Curriculum structure from Phase 2 (Design & Configure):\n${JSON.stringify(project.curriculum, null, 2)}`,
+                content: `Program structure from Phase 2 (Design & Organize):\n${JSON.stringify(project.programStructure, null, 2)}`,
             });
         }
 
-        // Phase 4 gets: Phase 3 blueprints
+        // Phase 4 gets Phase 3 blueprints
         if (phase >= 4 && project.labBlueprints && project.labBlueprints.length) {
             messages.push({
                 role: 'system',
-                content: `Lab blueprints from Phase 3 (Organize & Finalize):\n${JSON.stringify(project.labBlueprints, null, 2)}`,
+                content: `Lab blueprints from Phase 3 (Draft & Finalize):\n${JSON.stringify(project.labBlueprints, null, 2)}`,
             });
         }
     }

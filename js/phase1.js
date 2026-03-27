@@ -2,6 +2,16 @@
  * phase1.js — Phase 1 "Audiences & Objectives" UI controller.
  * Manages the split-panel layout: chat (left) + context panel (right).
  *
+ * Context panel sections:
+ *   - Uploaded Materials
+ *   - Target Audiences
+ *   - Business & Learning Objectives
+ *   - Success Criteria
+ *   - Technology & Platform
+ *   - Documentation & References
+ *   - Scenario Seeds
+ *   - Competencies
+ *
  * Depends on: Store (global IIFE).
  */
 
@@ -132,8 +142,12 @@ const Phase1 = (() => {
         container.innerHTML = '';
 
         renderUploads(project, container);
+        renderTechnologyPlatform(project, container);
         renderAudiences(project, container);
         renderObjectives(project, container);
+        renderSuccessCriteria(project, container);
+        renderDocumentationRefs(project, container);
+        renderScenarioSeeds(project, container);
         renderCompetencies(project, container);
     }
 
@@ -159,7 +173,6 @@ const Phase1 = (() => {
         if (!hasItems) {
             itemsHtml = '<div class="empty-state"><p>No materials uploaded yet.</p><p class="hint">Upload JTAs, job descriptions, or learning objectives to get started.</p></div>';
         } else {
-            // File uploads
             itemsHtml = uploads.map(u => `
                 <div class="upload-item" data-id="${u.id}" data-type="file">
                     <div class="upload-item-icon" title="File">&#128196;</div>
@@ -171,7 +184,6 @@ const Phase1 = (() => {
                 </div>
             `).join('');
 
-            // URL items
             itemsHtml += urls.map(u => `
                 <div class="upload-item" data-id="${u.id}" data-type="url">
                     <div class="upload-item-icon" title="URL">&#128279;</div>
@@ -197,14 +209,10 @@ const Phase1 = (() => {
             </div>
         `;
 
-        // Bind remove buttons
         section.querySelectorAll('[data-action="remove-upload"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const id = btn.dataset.id;
-                Store.mutateProject
-                    ? _removeUpload(project.id, id)
-                    : _removeUploadFallback(project.id, id);
+                _removeUpload(project.id, btn.dataset.id);
                 render(Store.getProject(project.id));
             });
         });
@@ -212,8 +220,7 @@ const Phase1 = (() => {
         section.querySelectorAll('[data-action="remove-url"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const id = btn.dataset.id;
-                _removeUrl(project.id, id);
+                _removeUrl(project.id, btn.dataset.id);
                 render(Store.getProject(project.id));
             });
         });
@@ -226,14 +233,36 @@ const Phase1 = (() => {
         Store.updateProject(project);
     }
 
-    // Alias in case mutateProject is not exposed
-    const _removeUploadFallback = _removeUpload;
-
     function _removeUrl(projectId, urlId) {
         const project = Store.getProject(projectId);
         if (!project) return;
         project.urls = (project.urls || []).filter(u => u.id !== urlId);
         Store.updateProject(project);
+    }
+
+    // ── Render: Technology & Platform ────────────────────────────
+
+    function renderTechnologyPlatform(project, container) {
+        const ctx = container || $('#phase1-context');
+        if (!ctx) return;
+
+        const platform = project.technologyPlatform || '';
+        if (!platform) return; // Don't show empty section
+
+        let section = ctx.querySelector('[data-section="technology"]');
+        if (!section) {
+            section = document.createElement('div');
+            section.className = 'context-section';
+            section.dataset.section = 'technology';
+            ctx.appendChild(section);
+        }
+
+        section.innerHTML = `
+            <div class="context-section-header">
+                <h3 class="context-section-title">Technology & Platform</h3>
+            </div>
+            <div class="technology-badge">${escHtml(platform)}</div>
+        `;
     }
 
     // ── Render: Audiences section ───────────────────────────────
@@ -284,7 +313,6 @@ const Phase1 = (() => {
             </div>
         `;
 
-        // Bind inline edits
         section.querySelectorAll('[contenteditable="true"]').forEach(el => {
             el.addEventListener('blur', () => {
                 const id = el.dataset.id;
@@ -364,7 +392,6 @@ const Phase1 = (() => {
             </div>
         `;
 
-        // Bind inline edits on objectives
         section.querySelectorAll('.objective-text[contenteditable="true"]').forEach(el => {
             el.addEventListener('blur', () => {
                 const type = el.dataset.type;
@@ -374,7 +401,6 @@ const Phase1 = (() => {
             });
         });
 
-        // Bind remove buttons
         section.querySelectorAll('[data-action="remove-objective"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -402,6 +428,157 @@ const Phase1 = (() => {
         if (!Array.isArray(project[key]) || index >= project[key].length) return;
         project[key].splice(index, 1);
         Store.updateProject(project);
+    }
+
+    // ── Render: Success Criteria ─────────────────────────────────
+
+    function renderSuccessCriteria(project, container) {
+        const ctx = container || $('#phase1-context');
+        if (!ctx) return;
+
+        const criteria = project.successCriteria || [];
+        if (criteria.length === 0) return; // Don't show empty section
+
+        let section = ctx.querySelector('[data-section="success-criteria"]');
+        if (!section) {
+            section = document.createElement('div');
+            section.className = 'context-section';
+            section.dataset.section = 'success-criteria';
+            ctx.appendChild(section);
+        }
+
+        const listHtml = '<ul class="objective-list">' +
+            criteria.map((c, i) => `
+                <li class="objective-item">
+                    <span class="objective-text" contenteditable="true" data-type="success" data-index="${i}">${escHtml(c)}</span>
+                    <button class="objective-remove" data-action="remove-criteria" data-index="${i}" title="Remove">&times;</button>
+                </li>
+            `).join('') +
+            '</ul>';
+
+        section.innerHTML = `
+            <div class="context-section-header">
+                <h3 class="context-section-title">Success Criteria</h3>
+            </div>
+            ${listHtml}
+        `;
+
+        section.querySelectorAll('.objective-text[contenteditable="true"]').forEach(el => {
+            el.addEventListener('blur', () => {
+                const index = parseInt(el.dataset.index, 10);
+                const p = Store.getProject(project.id);
+                if (p && Array.isArray(p.successCriteria) && index < p.successCriteria.length) {
+                    p.successCriteria[index] = el.textContent.trim();
+                    Store.updateProject(p);
+                }
+            });
+        });
+
+        section.querySelectorAll('[data-action="remove-criteria"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(btn.dataset.index, 10);
+                const p = Store.getProject(project.id);
+                if (p && Array.isArray(p.successCriteria)) {
+                    p.successCriteria.splice(index, 1);
+                    Store.updateProject(p);
+                    render(p);
+                }
+            });
+        });
+    }
+
+    // ── Render: Documentation & References ──────────────────────
+
+    function renderDocumentationRefs(project, container) {
+        const ctx = container || $('#phase1-context');
+        if (!ctx) return;
+
+        const refs = project.documentationRefs || [];
+        if (refs.length === 0) return;
+
+        let section = ctx.querySelector('[data-section="documentation"]');
+        if (!section) {
+            section = document.createElement('div');
+            section.className = 'context-section';
+            section.dataset.section = 'documentation';
+            ctx.appendChild(section);
+        }
+
+        const refsHtml = refs.map(r => `
+            <div class="upload-item" data-id="${r.id}">
+                <div class="upload-item-icon" title="Documentation">&#128218;</div>
+                <div class="upload-item-info">
+                    <div class="upload-item-name">${escHtml(r.title || r.url)}</div>
+                    ${r.notes ? `<div class="upload-item-meta">${escHtml(r.notes)}</div>` : ''}
+                </div>
+                <button class="upload-item-remove" data-action="remove-doc-ref" data-id="${r.id}" title="Remove">&times;</button>
+            </div>
+        `).join('');
+
+        section.innerHTML = `
+            <div class="context-section-header">
+                <h3 class="context-section-title">Documentation & References</h3>
+            </div>
+            <div class="uploads-list">${refsHtml}</div>
+        `;
+
+        section.querySelectorAll('[data-action="remove-doc-ref"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const p = Store.getProject(project.id);
+                if (p) {
+                    p.documentationRefs = (p.documentationRefs || []).filter(r => r.id !== btn.dataset.id);
+                    Store.updateProject(p);
+                    render(p);
+                }
+            });
+        });
+    }
+
+    // ── Render: Scenario Seeds ───────────────────────────────────
+
+    function renderScenarioSeeds(project, container) {
+        const ctx = container || $('#phase1-context');
+        if (!ctx) return;
+
+        const seeds = project.scenarioSeeds || [];
+        if (seeds.length === 0) return;
+
+        let section = ctx.querySelector('[data-section="scenarios"]');
+        if (!section) {
+            section = document.createElement('div');
+            section.className = 'context-section';
+            section.dataset.section = 'scenarios';
+            ctx.appendChild(section);
+        }
+
+        const seedsHtml = seeds.map(s => `
+            <div class="scenario-card" data-id="${s.id}">
+                <div class="scenario-title">${escHtml(s.title)}</div>
+                ${s.description ? `<div class="scenario-description">${escHtml(s.description)}</div>` : ''}
+                <button class="upload-item-remove" data-action="remove-scenario" data-id="${s.id}" title="Remove">&times;</button>
+            </div>
+        `).join('');
+
+        section.innerHTML = `
+            <div class="context-section-header">
+                <h3 class="context-section-title">Scenario Seeds</h3>
+            </div>
+            ${seedsHtml}
+        `;
+
+        section.querySelectorAll('[data-action="remove-scenario"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const p = Store.getProject(project.id);
+                if (p) {
+                    p.scenarioSeeds = (p.scenarioSeeds || []).filter(s => s.id !== btn.dataset.id);
+                    Store.updateProject(p);
+                    render(p);
+                }
+            });
+        });
     }
 
     // ── Render: Competencies section ────────────────────────────
@@ -442,12 +619,10 @@ const Phase1 = (() => {
             ${tagsHtml}
         `;
 
-        // Bind remove
         section.querySelectorAll('[data-action="remove-competency"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const id = btn.dataset.id;
-                _removeCompetency(project.id, id);
+                _removeCompetency(project.id, btn.dataset.id);
                 render(Store.getProject(project.id));
             });
         });
@@ -482,35 +657,23 @@ const Phase1 = (() => {
     // ── URL add handler ─────────────────────────────────────────
 
     function handleAddUrl(url, projectId) {
-        // Best-effort fetch via a proxy or direct (may fail due to CORS)
         const title = _extractTitleFromUrl(url);
 
-        // Try to fetch content; fall back to storing URL only
         fetch(url, { mode: 'cors' })
             .then(resp => {
                 if (!resp.ok) throw new Error('Fetch failed');
                 return resp.text();
             })
             .then(text => {
-                // Strip HTML tags for a rough plain-text extraction
                 const plainText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
                 const truncated = plainText.length > 50000 ? plainText.substring(0, 50000) + '...' : plainText;
 
-                Store.addUrl(projectId, {
-                    url,
-                    title,
-                    content: truncated,
-                });
+                Store.addUrl(projectId, { url, title, content: truncated });
                 const project = Store.getProject(projectId);
                 if (project) render(project);
             })
             .catch(() => {
-                // CORS or network failure — store the URL without content
-                Store.addUrl(projectId, {
-                    url,
-                    title,
-                    content: '',
-                });
+                Store.addUrl(projectId, { url, title, content: '' });
                 const project = Store.getProject(projectId);
                 if (project) render(project);
             });
@@ -519,7 +682,6 @@ const Phase1 = (() => {
     function _extractTitleFromUrl(url) {
         try {
             const u = new URL(url);
-            // Use the last path segment as a rough title
             const segments = u.pathname.split('/').filter(Boolean);
             if (segments.length > 0) {
                 return decodeURIComponent(segments[segments.length - 1]).replace(/[-_]/g, ' ');
@@ -532,23 +694,31 @@ const Phase1 = (() => {
 
     // ── Apply AI results ────────────────────────────────────────
 
-    /**
-     * Merge structured GOALS_SUMMARY data from an AI response into the project.
-     * Expected shape: { audiences, businessObjectives, learningObjectives, competencies }
-     */
     function applyAIResults(structured, projectId) {
         if (!structured) return;
 
         const project = Store.getProject(projectId);
         if (!project) return;
 
-        // Merge audiences (add new ones, don't duplicate by role name)
+        // Program name
+        if (structured.programName && structured.programName !== 'Untitled Program') {
+            project.name = structured.programName;
+            if (typeof window._appSetProgramName === 'function') {
+                window._appSetProgramName(structured.programName);
+            }
+        }
+
+        // Technology/Platform
+        if (structured.technologyPlatform) {
+            project.technologyPlatform = structured.technologyPlatform;
+        }
+
+        // Merge audiences
         if (Array.isArray(structured.audiences)) {
             const existingRoles = new Set((project.audiences || []).map(a => a.role.toLowerCase()));
             for (const a of structured.audiences) {
                 const role = a.role || a.name || '';
-                if (!role) continue;
-                if (existingRoles.has(role.toLowerCase())) continue;
+                if (!role || existingRoles.has(role.toLowerCase())) continue;
                 project.audiences.push({
                     id: Store.generateId(),
                     role,
@@ -559,7 +729,7 @@ const Phase1 = (() => {
             }
         }
 
-        // Merge business objectives (deduplicate by text)
+        // Merge business objectives
         if (Array.isArray(structured.businessObjectives)) {
             const existing = new Set((project.businessObjectives || []).map(o => o.toLowerCase()));
             for (const obj of structured.businessObjectives) {
@@ -579,7 +749,7 @@ const Phase1 = (() => {
             }
         }
 
-        // Merge competencies (deduplicate by name)
+        // Merge competencies
         if (Array.isArray(structured.competencies)) {
             const existingNames = new Set((project.competencies || []).map(c => c.name.toLowerCase()));
             for (const c of structured.competencies) {
@@ -595,23 +765,64 @@ const Phase1 = (() => {
             }
         }
 
+        // Merge success criteria
+        if (Array.isArray(structured.successCriteria)) {
+            if (!Array.isArray(project.successCriteria)) project.successCriteria = [];
+            const existing = new Set(project.successCriteria.map(s => s.toLowerCase()));
+            for (const sc of structured.successCriteria) {
+                if (!sc || existing.has(sc.toLowerCase())) continue;
+                project.successCriteria.push(sc);
+                existing.add(sc.toLowerCase());
+            }
+        }
+
+        // Merge documentation refs
+        if (Array.isArray(structured.documentationRefs)) {
+            if (!Array.isArray(project.documentationRefs)) project.documentationRefs = [];
+            const existingUrls = new Set(project.documentationRefs.map(d => d.url));
+            for (const ref of structured.documentationRefs) {
+                if (!ref.url || existingUrls.has(ref.url)) continue;
+                project.documentationRefs.push({
+                    id: Store.generateId(),
+                    url: ref.url,
+                    title: ref.title || ref.url,
+                    notes: ref.notes || '',
+                });
+                existingUrls.add(ref.url);
+            }
+        }
+
+        // Merge scenario seeds
+        if (Array.isArray(structured.scenarioSeeds)) {
+            if (!Array.isArray(project.scenarioSeeds)) project.scenarioSeeds = [];
+            const existingTitles = new Set(project.scenarioSeeds.map(s => s.title.toLowerCase()));
+            for (const seed of structured.scenarioSeeds) {
+                if (!seed.title || existingTitles.has(seed.title.toLowerCase())) continue;
+                project.scenarioSeeds.push({
+                    id: Store.generateId(),
+                    title: seed.title,
+                    description: seed.description || '',
+                });
+                existingTitles.add(seed.title.toLowerCase());
+            }
+        }
+
         Store.updateProject(project);
         render(project);
     }
 
     // ── Context summary for later phases ────────────────────────
 
-    /**
-     * Returns a plain-text summary of Phase 1 data for injection into
-     * subsequent phase system prompts.
-     */
     function getContextSummary(projectId) {
         const project = Store.getProject(projectId);
         if (!project) return '';
 
         const parts = [];
 
-        // Audiences
+        if (project.technologyPlatform) {
+            parts.push('Technology/Platform: ' + project.technologyPlatform);
+        }
+
         const audiences = project.audiences || [];
         if (audiences.length > 0) {
             parts.push('Target Audiences:');
@@ -623,21 +834,24 @@ const Phase1 = (() => {
             });
         }
 
-        // Business objectives
         const bizObj = project.businessObjectives || [];
         if (bizObj.length > 0) {
             parts.push('Business Objectives:');
             bizObj.forEach(o => parts.push(`  - ${o}`));
         }
 
-        // Learning objectives
         const learnObj = project.learningObjectives || [];
         if (learnObj.length > 0) {
             parts.push('Learning Objectives:');
             learnObj.forEach(o => parts.push(`  - ${o}`));
         }
 
-        // Competencies
+        const criteria = project.successCriteria || [];
+        if (criteria.length > 0) {
+            parts.push('Success Criteria:');
+            criteria.forEach(c => parts.push(`  - ${c}`));
+        }
+
         const competencies = project.competencies || [];
         if (competencies.length > 0) {
             parts.push('Competencies:');
@@ -648,7 +862,18 @@ const Phase1 = (() => {
             });
         }
 
-        // Uploaded materials (names only, not content)
+        const docRefs = project.documentationRefs || [];
+        if (docRefs.length > 0) {
+            parts.push('Documentation References:');
+            docRefs.forEach(r => parts.push(`  - ${r.title || r.url}`));
+        }
+
+        const seeds = project.scenarioSeeds || [];
+        if (seeds.length > 0) {
+            parts.push('Scenario Seeds:');
+            seeds.forEach(s => parts.push(`  - ${s.title}: ${s.description}`));
+        }
+
         const uploads = project.uploads || [];
         const urls = project.urls || [];
         if (uploads.length > 0 || urls.length > 0) {
