@@ -11,11 +11,11 @@ const Frameworks = (() => {
         { id: 'mitre-attack', name: 'MITRE ATT&CK', abbrev: 'ATT&CK', publisher: 'MITRE Corporation', domain: 'Cybersecurity', description: 'Knowledge base of adversary tactics and techniques across Enterprise, Mobile, and ICS.' },
         { id: 'comptia-security', name: 'CompTIA Security+ / CySA+ / CASP+', abbrev: 'CompTIA Sec', publisher: 'CompTIA', domain: 'Cybersecurity', description: 'Vendor-neutral cybersecurity certification exam objectives and competency domains.' },
 
-        // Cloud Computing
-        { id: 'comptia-cloud', name: 'CompTIA Cloud+', abbrev: 'Cloud+', publisher: 'CompTIA', domain: 'Cloud Computing', description: 'Vendor-neutral cloud computing competency domains covering architecture, security, deployment, and operations.' },
-        { id: 'aws-certs', name: 'AWS Certification Framework', abbrev: 'AWS Certs', publisher: 'Amazon Web Services', domain: 'Cloud Computing', description: 'Role-based certification paths: Practitioner, Associate, Professional, Specialty with detailed skill domains.' },
-        { id: 'azure-certs', name: 'Microsoft Azure Certification Framework', abbrev: 'Azure Certs', publisher: 'Microsoft', domain: 'Cloud Computing', description: 'Role-based certifications (Fundamentals, Associate, Expert, Specialty) with structured exam objectives.' },
-        { id: 'gcp-certs', name: 'Google Cloud Certification Framework', abbrev: 'GCP Certs', publisher: 'Google Cloud', domain: 'Cloud Computing', description: 'Professional and Associate certifications with detailed domain breakdowns.' },
+        // Cloud, DevOps & SRE
+        { id: 'comptia-cloud', name: 'CompTIA Cloud+', abbrev: 'Cloud+', publisher: 'CompTIA', domain: 'Cloud, DevOps & SRE', description: 'Vendor-neutral cloud computing competency domains covering architecture, security, deployment, and operations.' },
+        { id: 'azure-certs', name: 'Microsoft Azure Certifications', abbrev: 'Azure Certs', publisher: 'Microsoft', domain: 'Cloud, DevOps & SRE', description: 'Role-based certifications (Fundamentals, Associate, Expert, Specialty) with structured exam objective domains. Cert-based framework.' },
+        { id: 'aws-certs', name: 'AWS Certification Framework', abbrev: 'AWS Certs', publisher: 'Amazon Web Services', domain: 'Cloud, DevOps & SRE', description: 'Role-based certification paths: Practitioner, Associate, Professional, Specialty with detailed skill domains.' },
+        { id: 'dasa', name: 'DASA DevOps Competence Model', abbrev: 'DASA', publisher: 'DevOps Agile Skills Association', domain: 'Cloud, DevOps & SRE', description: '4 skill areas and 8 knowledge areas covering technical and behavioral DevOps competencies.' },
 
         // Data, AI & ML
         { id: 'edison', name: 'EDISON Data Science Framework', abbrev: 'EDSF', publisher: 'EDISON Project (EU)', domain: 'Data & AI', description: 'Competence Framework for Data Science covering analytics, engineering, management, and scientific methods.' },
@@ -26,17 +26,13 @@ const Frameworks = (() => {
         { id: 'swebok', name: 'SWEBOK v4', abbrev: 'SWEBOK', publisher: 'IEEE Computer Society', domain: 'Software Engineering', description: '18 Knowledge Areas covering the full scope of software engineering, including architecture, security, and operations.' },
         { id: 'swecom', name: 'SWECOM - SE Competency Model', abbrev: 'SWECOM', publisher: 'IEEE Computer Society', domain: 'Software Engineering', description: 'Competency levels mapped to SWEBOK knowledge areas for software engineering workforce development.' },
 
-        // DevOps & SRE
-        { id: 'dasa', name: 'DASA DevOps Competence Model', abbrev: 'DASA', publisher: 'DevOps Agile Skills Association', domain: 'DevOps & SRE', description: '4 skill areas and 8 knowledge areas covering technical and behavioral DevOps competencies.' },
-        { id: 'sre', name: 'Google SRE Competency Matrix', abbrev: 'SRE', publisher: 'Google / Community', domain: 'DevOps & SRE', description: 'Structured competencies for Site Reliability Engineering: availability, monitoring, capacity planning, incident response.' },
-
         // IT Operations
         { id: 'comptia-infra', name: 'CompTIA A+ / Server+ / Linux+', abbrev: 'CompTIA Ops', publisher: 'CompTIA', domain: 'IT Operations', description: 'Vendor-neutral exam objectives for IT operations, hardware, OS administration, and server infrastructure.' },
         { id: 'itil', name: 'ITIL 4', abbrev: 'ITIL', publisher: 'PeopleCert / Axelos', domain: 'IT Operations', description: 'Service management practices covering incident management, change enablement, monitoring, and capacity management.' },
 
         // Networking
         { id: 'comptia-network', name: 'CompTIA Network+', abbrev: 'Network+', publisher: 'CompTIA', domain: 'Networking', description: 'Vendor-neutral networking competency domains: fundamentals, implementation, operations, security, troubleshooting.' },
-        { id: 'cisco-ccna', name: 'Cisco CCNA', abbrev: 'CCNA', publisher: 'Cisco Systems', domain: 'Networking', description: 'Network fundamentals, access, IP connectivity/services, security fundamentals, and automation.' },
+        { id: 'cisco-certs', name: 'Cisco Certification Framework (CCNA / CCNP / CCIE)', abbrev: 'Cisco Certs', publisher: 'Cisco Systems', domain: 'Networking', description: 'Multi-track certification skill domains across Enterprise, Security, Data Center, Service Provider, Collaboration, and DevNet. Covers routing, switching, wireless, automation, and programmability at Associate through Expert levels.' },
 
         // Project Management
         { id: 'gapps', name: 'GAPPS Project Management Standards', abbrev: 'GAPPS', publisher: 'GAPPS (nonprofit)', domain: 'Project Management', description: 'Open-source, performance-based competency standards for project and program managers.' },
@@ -51,18 +47,28 @@ const Frameworks = (() => {
     // Custom/uploaded frameworks stored separately
     const customCatalog = [];
 
-    // Combined view of built-in + custom frameworks
+    // Combined view: custom frameworks FIRST, then built-in
     function _combined() {
-        return [...catalog, ...customCatalog];
+        return [...customCatalog, ...catalog];
     }
 
-    // Group by domain
+    // Group by domain — custom frameworks appear in their own group first
     function getDomains() {
         const domains = {};
-        _combined().forEach(fw => {
+        const combined = _combined();
+
+        // Custom frameworks first
+        const customs = combined.filter(fw => fw.custom);
+        if (customs.length > 0) {
+            domains['Your Frameworks'] = customs;
+        }
+
+        // Then built-in, preserving catalog order
+        combined.filter(fw => !fw.custom).forEach(fw => {
             if (!domains[fw.domain]) domains[fw.domain] = [];
             domains[fw.domain].push(fw);
         });
+
         return domains;
     }
 
