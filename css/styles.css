@@ -3189,6 +3189,13 @@ body {
     margin-left: 4px;
 }
 
+/* Inline row for side-by-side narrow fields */
+.settings-row-inline {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 14px;
+}
+
 /* Narrow select dropdowns for Lab Defaults */
 .select-narrow {
     max-width: 160px;

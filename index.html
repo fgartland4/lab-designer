@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=9">
+    <link rel="stylesheet" href="css/styles.css?v=10">
 </head>
 <body>
     <div id="app">
@@ -297,28 +297,39 @@
                         <!-- Lab Defaults -->
                         <div class="settings-section settings-full-width">
                             <h3 class="settings-section-title">Lab Defaults</h3>
+                            <div class="settings-row-inline">
+                                <div class="form-group">
+                                    <label for="settings-default-seat-time">Targeted Seat Time</label>
+                                    <select id="settings-default-seat-time" class="select-narrow">
+                                        <option value="15-30">15-30 min</option>
+                                        <option value="30-45">30-45 min</option>
+                                        <option value="45-75" selected>45-75 min</option>
+                                        <option value="75-90">75-90 min</option>
+                                        <option value="90-120">90-120 min</option>
+                                        <option value="120+">120+ min</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="settings-activities-per-lab">Activities per Lab</label>
+                                    <select id="settings-activities-per-lab" class="select-narrow">
+                                        <option value="1-2">1-2</option>
+                                        <option value="3-5" selected>3-5</option>
+                                        <option value="6-10">6-10</option>
+                                        <option value="unlimited">Unlimited</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="settings-default-difficulty">Difficulty</label>
+                                    <select id="settings-default-difficulty" class="select-narrow">
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate" selected>Intermediate</option>
+                                        <option value="advanced">Advanced</option>
+                                        <option value="expert">Expert</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div class="settings-grid">
                                 <div>
-                                    <div class="form-group">
-                                        <label for="settings-default-seat-time">Targeted Seat Time</label>
-                                        <select id="settings-default-seat-time" class="select-narrow">
-                                            <option value="15-30">15-30 min</option>
-                                            <option value="30-45">30-45 min</option>
-                                            <option value="45-75" selected>45-75 min</option>
-                                            <option value="75-90">75-90 min</option>
-                                            <option value="90-120">90-120 min</option>
-                                            <option value="120+">120+ min</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="settings-activities-per-lab">Activities per Lab</label>
-                                        <select id="settings-activities-per-lab" class="select-narrow">
-                                            <option value="1-2">1-2</option>
-                                            <option value="3-5" selected>3-5</option>
-                                            <option value="6-10">6-10</option>
-                                            <option value="unlimited">Unlimited</option>
-                                        </select>
-                                    </div>
                                     <div class="form-group">
                                         <label>Logo</label>
                                         <div class="logo-dropzone" id="settings-logo-dropzone">
@@ -337,15 +348,6 @@
                                     <span class="form-hint">Detailed theming, colors, and styling configured in Skillable Studio.</span>
                                 </div>
                                 <div>
-                                    <div class="form-group">
-                                        <label for="settings-default-difficulty">Difficulty</label>
-                                        <select id="settings-default-difficulty" class="select-narrow">
-                                            <option value="beginner">Beginner</option>
-                                            <option value="intermediate" selected>Intermediate</option>
-                                            <option value="advanced">Advanced</option>
-                                            <option value="expert">Expert</option>
-                                        </select>
-                                    </div>
                                     <div class="form-group">
                                         <label for="settings-naming-formula">Lab Naming Formula</label>
                                         <input type="text" id="settings-naming-formula" placeholder="{Verb} {Specific Action} {Product Name}" value="{Verb} {Specific Action} {Product Name}">
@@ -430,18 +432,18 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="js/markdown.js?v=9"></script>
-    <script src="js/frameworks.js?v=9"></script>
-    <script src="js/catalog.js?v=9"></script>
-    <script src="js/store.js?v=9"></script>
-    <script src="js/settings.js?v=9"></script>
-    <script src="js/chat.js?v=9"></script>
-    <script src="js/exporter.js?v=9"></script>
-    <script src="js/phase1.js?v=9"></script>
-    <script src="js/phase2.js?v=9"></script>
-    <script src="js/studio-features.js?v=9"></script>
-    <script src="js/phase3.js?v=9"></script>
-    <script src="js/phase4.js?v=9"></script>
-    <script src="js/app.js?v=9"></script>
+    <script src="js/markdown.js?v=10"></script>
+    <script src="js/frameworks.js?v=10"></script>
+    <script src="js/catalog.js?v=10"></script>
+    <script src="js/store.js?v=10"></script>
+    <script src="js/settings.js?v=10"></script>
+    <script src="js/chat.js?v=10"></script>
+    <script src="js/exporter.js?v=10"></script>
+    <script src="js/phase1.js?v=10"></script>
+    <script src="js/phase2.js?v=10"></script>
+    <script src="js/studio-features.js?v=10"></script>
+    <script src="js/phase3.js?v=10"></script>
+    <script src="js/phase4.js?v=10"></script>
+    <script src="js/app.js?v=10"></script>
 </body>
 </html>
