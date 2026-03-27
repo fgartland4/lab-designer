@@ -133,7 +133,10 @@ const Phase1 = (() => {
         cancelBtn.addEventListener('click', () => row.remove());
     }
 
-    // ── Render: full context panel (Lab Blueprint — grows as conversation progresses) ──
+    // ── Collapsible checklist state (persists within session) ───
+    const _expandedSections = new Set();
+
+    // ── Render: full context panel (collapsible checklist) ──────
 
     function render(project) {
         const container = $('#phase1-context');
@@ -141,116 +144,221 @@ const Phase1 = (() => {
 
         container.innerHTML = '';
 
-        // Check if we have any data to show
-        const hasUploads = (project.uploads || []).length > 0 || (project.urls || []).length > 0;
-        const hasPlatform = !!project.technologyPlatform;
-        const hasAudiences = (project.audiences || []).length > 0;
-        const hasBizObj = (project.businessObjectives || []).length > 0;
-        const hasLearnObj = (project.learningObjectives || []).length > 0;
-        const hasCriteria = (project.successCriteria || []).length > 0;
-        const hasDocRefs = (project.documentationRefs || []).length > 0;
-        const hasSeeds = (project.scenarioSeeds || []).length > 0;
-        const hasCompetencies = (project.competencies || []).length > 0;
-        const hasAnything = hasUploads || hasPlatform || hasAudiences || hasBizObj ||
-            hasLearnObj || hasCriteria || hasDocRefs || hasSeeds || hasCompetencies;
-
-        if (!hasAnything) {
-            container.innerHTML = `
-                <div class="context-blueprint-header">
-                    <h3>Lab Blueprint</h3>
-                    <p class="hint">This panel will fill in as we talk. Tell me about your program or upload documents to get started.</p>
-                </div>
-            `;
-            return;
-        }
-
-        // Blueprint header
-        const header = document.createElement('div');
-        header.className = 'context-blueprint-header';
-        header.innerHTML = `<h3>Lab Blueprint</h3>`;
-        container.appendChild(header);
-
-        // Only render sections that have data
-        if (hasUploads) renderUploads(project, container);
-        if (hasPlatform) renderTechnologyPlatform(project, container);
-        if (hasAudiences) renderAudiences(project, container);
-        if (hasBizObj || hasLearnObj) renderObjectives(project, container);
-        if (hasCriteria) renderSuccessCriteria(project, container);
-        if (hasDocRefs) renderDocumentationRefs(project, container);
-        if (hasSeeds) renderScenarioSeeds(project, container);
-        if (hasCompetencies) renderCompetencies(project, container);
-    }
-
-    // ── Render: Uploads section ─────────────────────────────────
-
-    function renderUploads(project, container) {
-        const ctx = container || $('#phase1-context');
-        if (!ctx) return;
-
-        let section = ctx.querySelector('[data-section="uploads"]');
-        if (!section) {
-            section = document.createElement('div');
-            section.className = 'context-section';
-            section.dataset.section = 'uploads';
-            ctx.appendChild(section);
-        }
-
+        // Gather counts for each section
         const uploads = project.uploads || [];
         const urls = project.urls || [];
-        const hasItems = uploads.length > 0 || urls.length > 0;
+        const audiences = project.audiences || [];
+        const bizObj = project.businessObjectives || [];
+        const learnObj = project.learningObjectives || [];
+        const criteria = project.successCriteria || [];
+        const docRefs = project.documentationRefs || [];
+        const seeds = project.scenarioSeeds || [];
+        const competencies = project.competencies || [];
+        const platform = project.technologyPlatform || '';
+        const seatTime = project.seatTime || { min: 45, max: 90 };
 
-        let itemsHtml = '';
-        if (!hasItems) {
-            return; // Don't render empty section
-        } else {
-            itemsHtml = uploads.map(u => `
-                <div class="upload-item" data-id="${u.id}" data-type="file">
-                    <div class="upload-item-icon" title="File">&#128196;</div>
-                    <div class="upload-item-info">
-                        <div class="upload-item-name">${escHtml(u.name)}</div>
-                        <div class="upload-item-meta">${formatDate(u.addedAt)}</div>
-                    </div>
-                    <button class="upload-item-remove" data-action="remove-upload" data-id="${u.id}" title="Remove">&times;</button>
-                </div>
-            `).join('');
-
-            itemsHtml += urls.map(u => `
-                <div class="upload-item" data-id="${u.id}" data-type="url">
-                    <div class="upload-item-icon" title="URL">&#128279;</div>
-                    <div class="upload-item-info">
-                        <div class="upload-item-name">${escHtml(u.title || u.url)}</div>
-                        <div class="upload-item-meta">${formatDate(u.addedAt)}</div>
-                    </div>
-                    <button class="upload-item-remove" data-action="remove-url" data-id="${u.id}" title="Remove">&times;</button>
-                </div>
-            `).join('');
-        }
-
-        section.innerHTML = `
-            <div class="context-section-header">
-                <h3 class="context-section-title">Source Materials</h3>
+        // Blueprint header
+        const programName = (project.name && project.name !== 'Untitled Program') ? project.name : '';
+        container.innerHTML = `
+            <div class="bp-header">
+                <h3 class="bp-title">Lab Blueprint</h3>
+                ${programName ? `<div class="bp-program-name">${escHtml(programName)}</div>` : ''}
             </div>
-            <div class="uploads-list">
-                ${itemsHtml}
-            </div>
+            <div class="bp-checklist" id="bp-checklist"></div>
         `;
 
-        section.querySelectorAll('[data-action="remove-upload"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                _removeUpload(project.id, btn.dataset.id);
-                render(Store.getProject(project.id));
-            });
-        });
+        const checklist = $('#bp-checklist', container);
 
-        section.querySelectorAll('[data-action="remove-url"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                _removeUrl(project.id, btn.dataset.id);
-                render(Store.getProject(project.id));
-            });
+        // Define all checklist items
+        const sections = [
+            {
+                key: 'platform',
+                label: 'Technology / Platform',
+                filled: !!platform,
+                summary: platform || 'Not specified',
+                detail: platform ? `<div class="bp-badge">${escHtml(platform)}</div>` : null,
+            },
+            {
+                key: 'audiences',
+                label: 'Target Audience(s)',
+                filled: audiences.length > 0,
+                summary: audiences.length > 0 ? `${audiences.length} defined` : 'None yet',
+                detail: audiences.length > 0 ? _renderAudienceDetail(audiences) : null,
+            },
+            {
+                key: 'objectives',
+                label: 'Business / Learning Objectives',
+                filled: bizObj.length > 0 || learnObj.length > 0,
+                summary: _objectivesSummary(bizObj, learnObj),
+                detail: (bizObj.length > 0 || learnObj.length > 0) ? _renderObjectivesDetail(bizObj, learnObj, project.id) : null,
+            },
+            {
+                key: 'seat-time',
+                label: 'Target Seat Time / Lab',
+                filled: true, // always has a default
+                summary: `${seatTime.min}\u2013${seatTime.max} min`,
+                detail: null,
+            },
+            {
+                key: 'criteria',
+                label: 'Success Criteria',
+                filled: criteria.length > 0,
+                summary: criteria.length > 0 ? `${criteria.length} defined` : 'None yet',
+                detail: criteria.length > 0 ? _renderListDetail(criteria) : null,
+            },
+            {
+                key: 'materials',
+                label: 'Source Materials',
+                filled: uploads.length > 0 || urls.length > 0,
+                summary: _materialsSummary(uploads, urls),
+                detail: (uploads.length > 0 || urls.length > 0) ? _renderMaterialsDetail(uploads, urls) : null,
+            },
+            {
+                key: 'docs',
+                label: 'Documentation & References',
+                filled: docRefs.length > 0,
+                summary: docRefs.length > 0 ? `${docRefs.length} linked` : 'None yet',
+                detail: docRefs.length > 0 ? _renderDocsDetail(docRefs) : null,
+            },
+            {
+                key: 'scenarios',
+                label: 'Scenario Seeds',
+                filled: seeds.length > 0,
+                summary: seeds.length > 0 ? `${seeds.length} ideas` : 'None yet',
+                detail: seeds.length > 0 ? _renderSeedsDetail(seeds) : null,
+            },
+            {
+                key: 'competencies',
+                label: 'Competencies',
+                filled: competencies.length > 0,
+                summary: competencies.length > 0 ? `${competencies.length} mapped` : 'None yet',
+                detail: competencies.length > 0 ? _renderCompetenciesDetail(competencies) : null,
+            },
+        ];
+
+        for (const sec of sections) {
+            const isExpanded = _expandedSections.has(sec.key);
+            const hasDetail = !!sec.detail;
+            const statusIcon = sec.filled ? '\u2705' : '\u26AA';
+            const chevron = hasDetail ? `<span class="bp-chevron ${isExpanded ? 'open' : ''}">\u25B6</span>` : '';
+
+            const row = document.createElement('div');
+            row.className = `bp-item ${sec.filled ? 'filled' : 'empty'}`;
+            row.dataset.key = sec.key;
+            row.innerHTML = `
+                <div class="bp-item-header" ${hasDetail ? 'data-toggle-bp' : ''} data-key="${sec.key}">
+                    <span class="bp-status">${statusIcon}</span>
+                    <span class="bp-label">${sec.label}</span>
+                    <span class="bp-summary">${sec.summary}</span>
+                    ${chevron}
+                </div>
+                ${hasDetail ? `<div class="bp-item-detail" style="display:${isExpanded ? 'block' : 'none'};">${sec.detail}</div>` : ''}
+            `;
+            checklist.appendChild(row);
+        }
+
+        // Bind expand/collapse
+        checklist.addEventListener('click', (e) => {
+            const toggle = e.target.closest('[data-toggle-bp]');
+            if (!toggle) return;
+            const key = toggle.dataset.key;
+            const detail = toggle.parentElement.querySelector('.bp-item-detail');
+            const chevron = toggle.querySelector('.bp-chevron');
+            if (!detail) return;
+
+            const isOpen = detail.style.display !== 'none';
+            detail.style.display = isOpen ? 'none' : 'block';
+            if (chevron) chevron.classList.toggle('open', !isOpen);
+
+            if (isOpen) {
+                _expandedSections.delete(key);
+            } else {
+                _expandedSections.add(key);
+            }
         });
     }
+
+    // ── Detail renderers ─────────────────────────────────────────
+
+    function _objectivesSummary(biz, learn) {
+        const parts = [];
+        if (biz.length > 0) parts.push(`${biz.length} business`);
+        if (learn.length > 0) parts.push(`${learn.length} learning`);
+        return parts.length > 0 ? parts.join(', ') : 'None yet';
+    }
+
+    function _materialsSummary(uploads, urls) {
+        const parts = [];
+        if (uploads.length > 0) parts.push(`${uploads.length} file${uploads.length > 1 ? 's' : ''}`);
+        if (urls.length > 0) parts.push(`${urls.length} URL${urls.length > 1 ? 's' : ''}`);
+        return parts.length > 0 ? parts.join(', ') : 'None yet';
+    }
+
+    function _renderAudienceDetail(audiences) {
+        return audiences.map(a => `
+            <div class="bp-detail-card">
+                <div class="bp-detail-role">${escHtml(a.role)}</div>
+                ${a.responsibilities ? `<div class="bp-detail-meta">${escHtml(a.responsibilities)}</div>` : ''}
+                ${a.prerequisites ? `<div class="bp-detail-meta">Prereqs: ${escHtml(a.prerequisites)}</div>` : ''}
+            </div>
+        `).join('');
+    }
+
+    function _renderObjectivesDetail(biz, learn) {
+        let html = '';
+        if (biz.length > 0) {
+            html += '<div class="bp-detail-sublabel">Business</div><ul class="bp-detail-list">' +
+                biz.map(o => `<li>${escHtml(o)}</li>`).join('') + '</ul>';
+        }
+        if (learn.length > 0) {
+            html += '<div class="bp-detail-sublabel">Learning</div><ul class="bp-detail-list">' +
+                learn.map(o => `<li>${escHtml(o)}</li>`).join('') + '</ul>';
+        }
+        return html;
+    }
+
+    function _renderListDetail(items) {
+        return '<ul class="bp-detail-list">' +
+            items.map(item => `<li>${escHtml(item)}</li>`).join('') + '</ul>';
+    }
+
+    function _renderMaterialsDetail(uploads, urls) {
+        let html = '';
+        for (const u of uploads) {
+            html += `<div class="bp-detail-file">${escHtml(u.name)}</div>`;
+        }
+        for (const u of urls) {
+            html += `<div class="bp-detail-file">${escHtml(u.title || u.url)}</div>`;
+        }
+        return html;
+    }
+
+    function _renderDocsDetail(refs) {
+        return refs.map(r => `
+            <div class="bp-detail-file">
+                ${escHtml(r.title || r.url)}
+                ${r.notes ? `<span class="bp-detail-meta">${escHtml(r.notes)}</span>` : ''}
+            </div>
+        `).join('');
+    }
+
+    function _renderSeedsDetail(seeds) {
+        return seeds.map(s => `
+            <div class="bp-detail-card">
+                <div class="bp-detail-role">${escHtml(s.title)}</div>
+                ${s.description ? `<div class="bp-detail-meta">${escHtml(s.description)}</div>` : ''}
+            </div>
+        `).join('');
+    }
+
+    function _renderCompetenciesDetail(competencies) {
+        return '<div class="bp-detail-tags">' +
+            competencies.map(c =>
+                `<span class="bp-tag" title="${escHtml(c.description || '')}">${escHtml(c.name)}${c.source ? ` <small>[${escHtml(c.source)}]</small>` : ''}</span>`
+            ).join('') + '</div>';
+    }
+
+    // ── Data mutation helpers (still needed for inline edits) ────
 
     function _removeUpload(projectId, uploadId) {
         const project = Store.getProject(projectId);
@@ -264,394 +372,6 @@ const Phase1 = (() => {
         if (!project) return;
         project.urls = (project.urls || []).filter(u => u.id !== urlId);
         Store.updateProject(project);
-    }
-
-    // ── Render: Technology & Platform ────────────────────────────
-
-    function renderTechnologyPlatform(project, container) {
-        const ctx = container || $('#phase1-context');
-        if (!ctx) return;
-
-        const platform = project.technologyPlatform || '';
-        if (!platform) return; // Don't show empty section
-
-        let section = ctx.querySelector('[data-section="technology"]');
-        if (!section) {
-            section = document.createElement('div');
-            section.className = 'context-section';
-            section.dataset.section = 'technology';
-            ctx.appendChild(section);
-        }
-
-        section.innerHTML = `
-            <div class="context-section-header">
-                <h3 class="context-section-title">Technology & Platform</h3>
-            </div>
-            <div class="technology-badge">${escHtml(platform)}</div>
-        `;
-    }
-
-    // ── Render: Audiences section ───────────────────────────────
-
-    function renderAudiences(project, container) {
-        const ctx = container || $('#phase1-context');
-        if (!ctx) return;
-
-        let section = ctx.querySelector('[data-section="audiences"]');
-        if (!section) {
-            section = document.createElement('div');
-            section.className = 'context-section';
-            section.dataset.section = 'audiences';
-            ctx.appendChild(section);
-        }
-
-        const audiences = project.audiences || [];
-
-        let cardsHtml = '';
-        if (audiences.length === 0) {
-            return; // Don't render empty section
-        } else {
-            cardsHtml = audiences.map(a => `
-                <div class="audience-card" data-id="${a.id}">
-                    <div class="audience-card-header">
-                        <span class="audience-role" contenteditable="true" data-field="role" data-id="${a.id}">${escHtml(a.role)}</span>
-                    </div>
-                    <div class="audience-card-body">
-                        <div class="audience-field">
-                            <label class="audience-field-label">Responsibilities</label>
-                            <div class="audience-field-value" contenteditable="true" data-field="responsibilities" data-id="${a.id}">${escHtml(a.responsibilities)}</div>
-                        </div>
-                        <div class="audience-field">
-                            <label class="audience-field-label">Prerequisites</label>
-                            <div class="audience-field-value" contenteditable="true" data-field="prerequisites" data-id="${a.id}">${escHtml(a.prerequisites)}</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        section.innerHTML = `
-            <div class="context-section-header">
-                <h3 class="context-section-title">Target Audiences</h3>
-            </div>
-            <div class="audiences-list">
-                ${cardsHtml}
-            </div>
-        `;
-
-        section.querySelectorAll('[contenteditable="true"]').forEach(el => {
-            el.addEventListener('blur', () => {
-                const id = el.dataset.id;
-                const field = el.dataset.field;
-                const value = el.textContent.trim();
-                _updateAudienceField(project.id, id, field, value);
-            });
-        });
-    }
-
-    function _updateAudienceField(projectId, audienceId, field, value) {
-        const project = Store.getProject(projectId);
-        if (!project) return;
-        const audience = (project.audiences || []).find(a => a.id === audienceId);
-        if (!audience) return;
-        audience[field] = value;
-        Store.updateProject(project);
-    }
-
-    // ── Render: Business + Learning Objectives ──────────────────
-
-    function renderObjectives(project, container) {
-        const ctx = container || $('#phase1-context');
-        if (!ctx) return;
-
-        let section = ctx.querySelector('[data-section="objectives"]');
-        if (!section) {
-            section = document.createElement('div');
-            section.className = 'context-section';
-            section.dataset.section = 'objectives';
-            ctx.appendChild(section);
-        }
-
-        const bizObj = project.businessObjectives || [];
-        const learnObj = project.learningObjectives || [];
-
-        let bizHtml = '';
-        if (bizObj.length === 0) {
-            bizHtml = '';
-        } else {
-            bizHtml = '<ul class="objective-list">' +
-                bizObj.map((obj, i) => `
-                    <li class="objective-item" data-type="business" data-index="${i}">
-                        <span class="objective-text" contenteditable="true" data-type="business" data-index="${i}">${escHtml(obj)}</span>
-                        <button class="objective-remove" data-action="remove-objective" data-type="business" data-index="${i}" title="Remove">&times;</button>
-                    </li>
-                `).join('') +
-                '</ul>';
-        }
-
-        let learnHtml = '';
-        if (learnObj.length === 0) {
-            learnHtml = '';
-        } else {
-            learnHtml = '<ul class="objective-list">' +
-                learnObj.map((obj, i) => `
-                    <li class="objective-item" data-type="learning" data-index="${i}">
-                        <span class="objective-text" contenteditable="true" data-type="learning" data-index="${i}">${escHtml(obj)}</span>
-                        <button class="objective-remove" data-action="remove-objective" data-type="learning" data-index="${i}" title="Remove">&times;</button>
-                    </li>
-                `).join('') +
-                '</ul>';
-        }
-
-        section.innerHTML = `
-            <div class="context-section-header">
-                <h3 class="context-section-title">Business Objectives</h3>
-            </div>
-            <div class="objectives-group">
-                ${bizHtml}
-            </div>
-            <div class="context-section-header" style="margin-top: 16px;">
-                <h3 class="context-section-title">Learning Objectives</h3>
-            </div>
-            <div class="objectives-group">
-                ${learnHtml}
-            </div>
-        `;
-
-        section.querySelectorAll('.objective-text[contenteditable="true"]').forEach(el => {
-            el.addEventListener('blur', () => {
-                const type = el.dataset.type;
-                const index = parseInt(el.dataset.index, 10);
-                const value = el.textContent.trim();
-                _updateObjective(project.id, type, index, value);
-            });
-        });
-
-        section.querySelectorAll('[data-action="remove-objective"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const type = btn.dataset.type;
-                const index = parseInt(btn.dataset.index, 10);
-                _removeObjective(project.id, type, index);
-                render(Store.getProject(project.id));
-            });
-        });
-    }
-
-    function _updateObjective(projectId, type, index, value) {
-        const project = Store.getProject(projectId);
-        if (!project) return;
-        const key = type === 'business' ? 'businessObjectives' : 'learningObjectives';
-        if (!Array.isArray(project[key]) || index >= project[key].length) return;
-        project[key][index] = value;
-        Store.updateProject(project);
-    }
-
-    function _removeObjective(projectId, type, index) {
-        const project = Store.getProject(projectId);
-        if (!project) return;
-        const key = type === 'business' ? 'businessObjectives' : 'learningObjectives';
-        if (!Array.isArray(project[key]) || index >= project[key].length) return;
-        project[key].splice(index, 1);
-        Store.updateProject(project);
-    }
-
-    // ── Render: Success Criteria ─────────────────────────────────
-
-    function renderSuccessCriteria(project, container) {
-        const ctx = container || $('#phase1-context');
-        if (!ctx) return;
-
-        const criteria = project.successCriteria || [];
-        if (criteria.length === 0) return; // Don't show empty section
-
-        let section = ctx.querySelector('[data-section="success-criteria"]');
-        if (!section) {
-            section = document.createElement('div');
-            section.className = 'context-section';
-            section.dataset.section = 'success-criteria';
-            ctx.appendChild(section);
-        }
-
-        const listHtml = '<ul class="objective-list">' +
-            criteria.map((c, i) => `
-                <li class="objective-item">
-                    <span class="objective-text" contenteditable="true" data-type="success" data-index="${i}">${escHtml(c)}</span>
-                    <button class="objective-remove" data-action="remove-criteria" data-index="${i}" title="Remove">&times;</button>
-                </li>
-            `).join('') +
-            '</ul>';
-
-        section.innerHTML = `
-            <div class="context-section-header">
-                <h3 class="context-section-title">Success Criteria</h3>
-            </div>
-            ${listHtml}
-        `;
-
-        section.querySelectorAll('.objective-text[contenteditable="true"]').forEach(el => {
-            el.addEventListener('blur', () => {
-                const index = parseInt(el.dataset.index, 10);
-                const p = Store.getProject(project.id);
-                if (p && Array.isArray(p.successCriteria) && index < p.successCriteria.length) {
-                    p.successCriteria[index] = el.textContent.trim();
-                    Store.updateProject(p);
-                }
-            });
-        });
-
-        section.querySelectorAll('[data-action="remove-criteria"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const index = parseInt(btn.dataset.index, 10);
-                const p = Store.getProject(project.id);
-                if (p && Array.isArray(p.successCriteria)) {
-                    p.successCriteria.splice(index, 1);
-                    Store.updateProject(p);
-                    render(p);
-                }
-            });
-        });
-    }
-
-    // ── Render: Documentation & References ──────────────────────
-
-    function renderDocumentationRefs(project, container) {
-        const ctx = container || $('#phase1-context');
-        if (!ctx) return;
-
-        const refs = project.documentationRefs || [];
-        if (refs.length === 0) return;
-
-        let section = ctx.querySelector('[data-section="documentation"]');
-        if (!section) {
-            section = document.createElement('div');
-            section.className = 'context-section';
-            section.dataset.section = 'documentation';
-            ctx.appendChild(section);
-        }
-
-        const refsHtml = refs.map(r => `
-            <div class="upload-item" data-id="${r.id}">
-                <div class="upload-item-icon" title="Documentation">&#128218;</div>
-                <div class="upload-item-info">
-                    <div class="upload-item-name">${escHtml(r.title || r.url)}</div>
-                    ${r.notes ? `<div class="upload-item-meta">${escHtml(r.notes)}</div>` : ''}
-                </div>
-                <button class="upload-item-remove" data-action="remove-doc-ref" data-id="${r.id}" title="Remove">&times;</button>
-            </div>
-        `).join('');
-
-        section.innerHTML = `
-            <div class="context-section-header">
-                <h3 class="context-section-title">Documentation & References</h3>
-            </div>
-            <div class="uploads-list">${refsHtml}</div>
-        `;
-
-        section.querySelectorAll('[data-action="remove-doc-ref"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const p = Store.getProject(project.id);
-                if (p) {
-                    p.documentationRefs = (p.documentationRefs || []).filter(r => r.id !== btn.dataset.id);
-                    Store.updateProject(p);
-                    render(p);
-                }
-            });
-        });
-    }
-
-    // ── Render: Scenario Seeds ───────────────────────────────────
-
-    function renderScenarioSeeds(project, container) {
-        const ctx = container || $('#phase1-context');
-        if (!ctx) return;
-
-        const seeds = project.scenarioSeeds || [];
-        if (seeds.length === 0) return;
-
-        let section = ctx.querySelector('[data-section="scenarios"]');
-        if (!section) {
-            section = document.createElement('div');
-            section.className = 'context-section';
-            section.dataset.section = 'scenarios';
-            ctx.appendChild(section);
-        }
-
-        const seedsHtml = seeds.map(s => `
-            <div class="scenario-card" data-id="${s.id}">
-                <div class="scenario-title">${escHtml(s.title)}</div>
-                ${s.description ? `<div class="scenario-description">${escHtml(s.description)}</div>` : ''}
-                <button class="upload-item-remove" data-action="remove-scenario" data-id="${s.id}" title="Remove">&times;</button>
-            </div>
-        `).join('');
-
-        section.innerHTML = `
-            <div class="context-section-header">
-                <h3 class="context-section-title">Scenario Seeds</h3>
-            </div>
-            ${seedsHtml}
-        `;
-
-        section.querySelectorAll('[data-action="remove-scenario"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const p = Store.getProject(project.id);
-                if (p) {
-                    p.scenarioSeeds = (p.scenarioSeeds || []).filter(s => s.id !== btn.dataset.id);
-                    Store.updateProject(p);
-                    render(p);
-                }
-            });
-        });
-    }
-
-    // ── Render: Competencies section ────────────────────────────
-
-    function renderCompetencies(project, container) {
-        const ctx = container || $('#phase1-context');
-        if (!ctx) return;
-
-        let section = ctx.querySelector('[data-section="competencies"]');
-        if (!section) {
-            section = document.createElement('div');
-            section.className = 'context-section';
-            section.dataset.section = 'competencies';
-            ctx.appendChild(section);
-        }
-
-        const competencies = project.competencies || [];
-
-        let tagsHtml = '';
-        if (competencies.length === 0) {
-            return; // Don't render empty section
-        } else {
-            tagsHtml = '<div class="competency-cloud">' +
-                competencies.map(c => `
-                    <div class="competency-tag" data-id="${c.id}" title="${escHtml(c.description || '')}">
-                        <span class="competency-name">${escHtml(c.name)}</span>
-                        ${c.source ? `<span class="competency-source-badge">${escHtml(c.source)}</span>` : ''}
-                        <button class="competency-remove" data-action="remove-competency" data-id="${c.id}" title="Remove">&times;</button>
-                    </div>
-                `).join('') +
-                '</div>';
-        }
-
-        section.innerHTML = `
-            <div class="context-section-header">
-                <h3 class="context-section-title">Competencies</h3>
-            </div>
-            ${tagsHtml}
-        `;
-
-        section.querySelectorAll('[data-action="remove-competency"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                _removeCompetency(project.id, btn.dataset.id);
-                render(Store.getProject(project.id));
-            });
-        });
     }
 
     function _removeCompetency(projectId, competencyId) {
@@ -916,10 +636,6 @@ const Phase1 = (() => {
     return {
         init,
         render,
-        renderUploads,
-        renderAudiences,
-        renderObjectives,
-        renderCompetencies,
         handleUpload,
         handleAddUrl,
         applyAIResults,

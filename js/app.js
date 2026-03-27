@@ -304,7 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
             } else {
                 renderChatMessage('phase1', 'assistant',
-                    `Do you have any documents — like job task analyses, learning objectives, or job descriptions — you'd like to upload? Or just tell me about the program you're building.`
+                    `Tell me about the program you're building.\n\n` +
+                    `If you have any documents — like learning objectives, job task analyses, job descriptions, or even a task list — click the paperclip below to upload them and we'll get started.`
                 );
             }
         }
