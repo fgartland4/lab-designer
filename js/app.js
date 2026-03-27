@@ -265,9 +265,73 @@ document.addEventListener('DOMContentLoaded', () => {
         history.forEach(msg => renderChatMessage(phaseKey, msg.role, msg.content));
     }
 
+    // ── Skillable-flavored typing phrases ──
+    const SKILLABLE_VERBS = {
+        phase1: [
+            'Skill-scanning your uploads...',
+            'Absorbing your learning goals...',
+            'Labifying your objectives...',
+            'Mapping out the learning journey...',
+            'Decoding your audience DNA...',
+            'Competency-mining your docs...',
+            'Blueprinting the possibilities...',
+            'Calibrating the learning path...',
+            'Distilling your requirements...',
+        ],
+        phase2: [
+            'Labcrafting your outline...',
+            'Structuring the learning adventure...',
+            'Forging the activity blueprint...',
+            'Architecting your lab series...',
+            'Scaffolding the skill journey...',
+            'Assembling the lab framework...',
+            'Charting the lab landscape...',
+            'Skill-weaving your structure...',
+            'Sequencing the learning arc...',
+        ],
+        phase3: [
+            'Drafting your guidance...',
+            'Instructifying the activities...',
+            'Wordsmithing the walkthrough...',
+            'Authoring the learning path...',
+            'Polishing the lab steps...',
+            'Confidence-building the instructions...',
+            'Fine-tuning the challenge...',
+            'Crafting the discovery moments...',
+            'Detailing the skill-builders...',
+        ],
+        phase4: [
+            'Bundling the lab package...',
+            'Finalizing the deliverables...',
+            'Wiring up the environment...',
+            'Scoring the success criteria...',
+            'Packaging the experience...',
+            'Launch-prepping your labs...',
+            'Quality-checking the output...',
+            'Export-readying your program...',
+        ],
+    };
+
+    function _pickSkillableVerb(phaseKey) {
+        const verbs = SKILLABLE_VERBS[phaseKey] || SKILLABLE_VERBS.phase1;
+        return verbs[Math.floor(Math.random() * verbs.length)];
+    }
+
     function showTypingIndicator(phaseKey) {
         const el = $(`#${phaseKey}-chat-typing`);
-        if (el) el.style.display = 'block';
+        if (!el) return;
+
+        // Update the typing bubble with a Skillable verb
+        const verb = _pickSkillableVerb(phaseKey);
+        const bubble = el.querySelector('.chat-bubble');
+        if (bubble) {
+            bubble.innerHTML = `
+                <div class="typing-indicator"><span></span><span></span><span></span></div>
+                <div class="typing-verb">${verb}</div>
+            `;
+        }
+
+        el.style.display = 'block';
         const container = $(`#${phaseKey}-chat-messages`);
         if (container) container.scrollTop = container.scrollHeight;
     }
