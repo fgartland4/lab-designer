@@ -770,7 +770,7 @@ body {
     padding: 0 20px;
 }
 
-/* ===== 8. Context Panel ===== */
+/* ===== 8. Context Panel (Phase 1 right pane) ===== */
 .context-panel {
     width: 420px;
     min-width: 360px;
@@ -798,6 +798,42 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 16px 20px;
+}
+
+/* ===== 8b. Center Pane (Phases 2 & 4: outline/results in center) ===== */
+.center-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 300px;
+    background: var(--color-surface);
+    overflow: hidden;
+}
+
+.center-pane-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--color-border-light);
+    background: var(--color-surface);
+}
+
+.center-pane-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.center-pane-body {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* ===== 8c. Chat Panel Right (Phases 2, 3, 4: chat on the right) ===== */
+.chat-panel-right {
+    width: 420px;
+    min-width: 320px;
+    max-width: 500px;
+    border-left: 1px solid var(--color-border-light);
+    border-right: none;
 }
 
 /* Context Tabs (used in Phase 2 organize, and Phase 2/4 tabs) */
@@ -3745,9 +3781,15 @@ body {
 
 /* ===== 34. Responsive ===== */
 @media (max-width: 1200px) {
-    .context-panel {
+    .context-panel,
+    .chat-panel-right {
         width: 340px;
         min-width: 300px;
+    }
+
+    .phase3-right-pane {
+        width: 380px;
+        min-width: 320px;
     }
 }
 
@@ -3805,7 +3847,8 @@ body {
         display: none;
     }
 
-    .context-panel {
+    .context-panel,
+    .center-pane {
         width: 100%;
         min-width: 0;
         max-width: none;
@@ -3814,8 +3857,20 @@ body {
         max-height: 40vh;
     }
 
-    .chat-panel {
+    .chat-panel,
+    .chat-panel-right {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        border-left: none;
         border-right: none;
+    }
+
+    .phase3-right-pane {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        border-left: none;
     }
 
     /* Form rows stack */
@@ -3830,7 +3885,8 @@ body {
         flex-direction: column;
     }
 
-    .context-panel {
+    .context-panel,
+    .center-pane {
         width: 100%;
         min-width: 0;
         max-width: none;
@@ -3839,8 +3895,20 @@ body {
         max-height: 40vh;
     }
 
-    .chat-panel {
+    .chat-panel,
+    .chat-panel-right {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        border-left: none;
         border-right: none;
+    }
+
+    .phase3-right-pane {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        border-left: none;
     }
 }
 

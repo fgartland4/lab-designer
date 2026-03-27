@@ -40,8 +40,12 @@ const Phase4 = (() => {
 
     // ── Init ─────────────────────────────────────────────────────
 
+    function _getContainer() {
+        return $('#phase4-context .center-pane-body') || $('#phase4-context');
+    }
+
     function init() {
-        const container = $('#phase4-context');
+        const container = _getContainer();
         if (!container) return;
 
         container.addEventListener('click', (e) => {
@@ -101,7 +105,7 @@ const Phase4 = (() => {
     // ── Render ────────────────────────────────────────────────────
 
     function render(project) {
-        const container = $('#phase4-context');
+        const container = _getContainer();
         if (!container || !project) return;
 
         const programName = (project.name && project.name !== 'Untitled Program') ? project.name : '';

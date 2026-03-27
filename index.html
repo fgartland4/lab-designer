@@ -122,12 +122,24 @@
             <!-- ==================== PHASE 2: Design & Configure ==================== -->
             <section id="section-phase2" class="phase phase-section">
                 <div class="phase-layout">
-                    <!-- Chat Panel (left) -->
-                    <div class="chat-panel">
-                        <div class="chat-header">
+                    <!-- Center Pane: Outline & Skill Mapping -->
+                    <div class="center-pane" id="phase2-context">
+                        <div class="center-pane-header">
                             <h2>Design &amp; Organize</h2>
-                            <p class="chat-subtitle">Let's structure your program into Lab Series, Labs, and Activities. I'll propose names using action verbs and help map to skill frameworks.</p>
+                            <p class="chat-subtitle">Structure your program into Lab Series, Labs, and Activities. Use the chat to generate or refine the outline.</p>
                         </div>
+                        <div class="center-pane-body">
+                            <div class="empty-state">
+                                <p>No program structure yet.</p>
+                                <p class="hint">Complete Phase 1, then ask me to generate a Lab Series and Labs structure from your objectives.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pane-resizer" title="Drag to resize"></div>
+
+                    <!-- Right Pane: Chat -->
+                    <div class="chat-panel chat-panel-right">
                         <div class="chat-messages" id="phase2-chat-messages"></div>
                         <div class="chat-typing" id="phase2-chat-typing" style="display:none;">
                             <div class="chat-bubble assistant">
@@ -144,15 +156,6 @@
                                 <button class="btn btn-primary chat-send" id="phase2-chat-send">Send</button>
                             </div>
                             <input type="file" id="phase2-file-input" multiple accept=".txt,.md,.pdf,.docx,.json,.csv,.xlsx" style="display:none">
-                        </div>
-                    </div>
-
-                    <div class="pane-resizer" title="Drag to resize"></div>
-                    <!-- Context Panel (right) -->
-                    <div class="context-panel" id="phase2-context">
-                        <div class="empty-state">
-                            <p>No program structure yet.</p>
-                            <p class="hint">Complete Phase 1, then ask me to generate a Lab Series and Labs structure from your objectives.</p>
                         </div>
                     </div>
                 </div>
@@ -212,15 +215,27 @@
                 </div>
             </section>
 
-            <!-- ==================== PHASE 4: Architect & Build ==================== -->
+            <!-- ==================== PHASE 4: Package & Export ==================== -->
             <section id="section-phase4" class="phase phase-section">
                 <div class="phase-layout">
-                    <!-- Chat Panel (left) -->
-                    <div class="chat-panel">
-                        <div class="chat-header">
+                    <!-- Center Pane: Environment Checklist & Export -->
+                    <div class="center-pane" id="phase4-context">
+                        <div class="center-pane-header">
                             <h2>Package &amp; Export</h2>
-                            <p class="chat-subtitle">Let's assemble everything your lab environments will need and package it all for Skillable Studio.</p>
+                            <p class="chat-subtitle">Environment checklist and export packaging for Skillable Studio.</p>
                         </div>
+                        <div class="center-pane-body">
+                            <div class="empty-state">
+                                <p>Ready to package.</p>
+                                <p class="hint">Define environment templates, scoring methods, and export your program to Skillable Studio.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pane-resizer" title="Drag to resize"></div>
+
+                    <!-- Right Pane: Chat -->
+                    <div class="chat-panel chat-panel-right">
                         <div class="chat-messages" id="phase4-chat-messages"></div>
                         <div class="chat-typing" id="phase4-chat-typing" style="display:none;">
                             <div class="chat-bubble assistant">
@@ -237,15 +252,6 @@
                                 <button class="btn btn-primary chat-send" id="phase4-chat-send">Send</button>
                             </div>
                             <input type="file" id="phase4-file-input" multiple accept=".txt,.md,.pdf,.docx,.json,.csv,.xlsx" style="display:none">
-                        </div>
-                    </div>
-
-                    <div class="pane-resizer" title="Drag to resize"></div>
-                    <!-- Context Panel (right) -->
-                    <div class="context-panel" id="phase4-context">
-                        <div class="empty-state">
-                            <p>Ready to package.</p>
-                            <p class="hint">Define environment templates, scoring methods, and export your program to Skillable Studio.</p>
                         </div>
                     </div>
                 </div>

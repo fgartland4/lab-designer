@@ -17,11 +17,16 @@ const Phase2 = (() => {
     // ── Initialisation ───────────────────────────────────────────
 
     function init() {
-        const container = $('#phase2-context');
+        const container = _getContainer();
         if (!container) return;
 
         _bindTabButtons(container);
         _bindFrameworkUploadInput(container);
+    }
+
+    function _getContainer() {
+        // Render into center-pane-body if it exists, otherwise fall back to #phase2-context
+        return $('#phase2-context .center-pane-body') || $('#phase2-context');
     }
 
     function _bindTabButtons(container) {
@@ -51,7 +56,7 @@ const Phase2 = (() => {
     // ── Full render ──────────────────────────────────────────────
 
     function render(project) {
-        const container = $('#phase2-context');
+        const container = _getContainer();
         if (!container) return;
 
         container.innerHTML = _buildTabsShell(project);
