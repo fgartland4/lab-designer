@@ -504,8 +504,6 @@ body {
     flex-direction: column;
     gap: 16px;
     background-color: var(--color-bg);
-    background-image: var(--color-bg-grid);
-    background-size: 24px 24px;
 }
 
 .chat-bubble {
