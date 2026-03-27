@@ -294,31 +294,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const history = Store.getChatHistory(currentProject.id, 'phase1');
         if (history.length === 0) {
             const existingProjects = Store.listProjects();
-            if (existingProjects.length > 1) {
-                // There are existing programs — offer to continue or start fresh
-                const programNames = existingProjects
-                    .filter(p => p.id !== currentProject.id && p.name !== 'Untitled Program')
-                    .map(p => `- **${p.name}**`)
-                    .join('\n');
+            const namedProjects = existingProjects.filter(p => p.id !== currentProject.id && p.name !== 'Untitled Program');
 
+            if (namedProjects.length > 0) {
+                const programNames = namedProjects.map(p => `- **${p.name}**`).join('\n');
                 renderChatMessage('phase1', 'assistant',
-                    `Welcome back to Lab Program Designer!\n\n` +
-                    `You have existing programs:\n${programNames}\n\n` +
-                    `Would you like to **continue working on one of these**, or **start a new program**?\n\n` +
-                    `If starting new, tell me:\n` +
-                    `- What technology, platform, or product are your learners using?\n` +
-                    `- Who is the target audience?\n` +
-                    `- What should learners be able to do after completing the training?`
+                    `Welcome back! You have existing programs:\n${programNames}\n\n` +
+                    `Would you like to **continue working on one of these**, or **start a new program**?`
                 );
             } else {
                 renderChatMessage('phase1', 'assistant',
-                    `Welcome to Lab Program Designer! I'm here to help you create a hands-on lab training program.\n\n` +
-                    `Let's start by understanding your program. You can:\n\n` +
-                    `- **Tell me about your program** — what technology, platform, or product are your learners using? Who is the target audience?\n` +
-                    `- **Upload documents** like job task analyses, job descriptions, or learning objectives using the paperclip icon\n` +
-                    `- **Paste objectives** directly into the chat\n` +
-                    `- **Share documentation links** for the product or platform your labs will focus on\n\n` +
-                    `What are you building training for?`
+                    `Do you have any documents — like job task analyses, learning objectives, or job descriptions — you'd like to upload? Or just tell me about the program you're building.`
                 );
             }
         }

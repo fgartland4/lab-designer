@@ -793,6 +793,23 @@ body {
     margin-bottom: 20px;
 }
 
+.context-blueprint-header {
+    padding: 16px 20px;
+}
+
+.context-blueprint-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.context-blueprint-header .hint {
+    font-size: 13px;
+    color: var(--color-text-light);
+    margin: 8px 0 0;
+}
+
 .context-section-header {
     display: flex;
     align-items: center;

@@ -133,7 +133,7 @@ const Phase1 = (() => {
         cancelBtn.addEventListener('click', () => row.remove());
     }
 
-    // ── Render: full context panel ──────────────────────────────
+    // ── Render: full context panel (Lab Blueprint — grows as conversation progresses) ──
 
     function render(project) {
         const container = $('#phase1-context');
@@ -141,14 +141,44 @@ const Phase1 = (() => {
 
         container.innerHTML = '';
 
-        renderUploads(project, container);
-        renderTechnologyPlatform(project, container);
-        renderAudiences(project, container);
-        renderObjectives(project, container);
-        renderSuccessCriteria(project, container);
-        renderDocumentationRefs(project, container);
-        renderScenarioSeeds(project, container);
-        renderCompetencies(project, container);
+        // Check if we have any data to show
+        const hasUploads = (project.uploads || []).length > 0 || (project.urls || []).length > 0;
+        const hasPlatform = !!project.technologyPlatform;
+        const hasAudiences = (project.audiences || []).length > 0;
+        const hasBizObj = (project.businessObjectives || []).length > 0;
+        const hasLearnObj = (project.learningObjectives || []).length > 0;
+        const hasCriteria = (project.successCriteria || []).length > 0;
+        const hasDocRefs = (project.documentationRefs || []).length > 0;
+        const hasSeeds = (project.scenarioSeeds || []).length > 0;
+        const hasCompetencies = (project.competencies || []).length > 0;
+        const hasAnything = hasUploads || hasPlatform || hasAudiences || hasBizObj ||
+            hasLearnObj || hasCriteria || hasDocRefs || hasSeeds || hasCompetencies;
+
+        if (!hasAnything) {
+            container.innerHTML = `
+                <div class="context-blueprint-header">
+                    <h3>Lab Blueprint</h3>
+                    <p class="hint">This panel will fill in as we talk. Tell me about your program or upload documents to get started.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Blueprint header
+        const header = document.createElement('div');
+        header.className = 'context-blueprint-header';
+        header.innerHTML = `<h3>Lab Blueprint</h3>`;
+        container.appendChild(header);
+
+        // Only render sections that have data
+        if (hasUploads) renderUploads(project, container);
+        if (hasPlatform) renderTechnologyPlatform(project, container);
+        if (hasAudiences) renderAudiences(project, container);
+        if (hasBizObj || hasLearnObj) renderObjectives(project, container);
+        if (hasCriteria) renderSuccessCriteria(project, container);
+        if (hasDocRefs) renderDocumentationRefs(project, container);
+        if (hasSeeds) renderScenarioSeeds(project, container);
+        if (hasCompetencies) renderCompetencies(project, container);
     }
 
     // ── Render: Uploads section ─────────────────────────────────
@@ -171,7 +201,7 @@ const Phase1 = (() => {
 
         let itemsHtml = '';
         if (!hasItems) {
-            itemsHtml = '<div class="empty-state"><p>No materials uploaded yet.</p><p class="hint">Upload JTAs, job descriptions, or learning objectives to get started.</p></div>';
+            return; // Don't render empty section
         } else {
             itemsHtml = uploads.map(u => `
                 <div class="upload-item" data-id="${u.id}" data-type="file">
@@ -198,11 +228,7 @@ const Phase1 = (() => {
 
         section.innerHTML = `
             <div class="context-section-header">
-                <h3 class="context-section-title">Uploaded Materials</h3>
-                <div class="context-section-actions">
-                    <button class="context-action-btn" data-action="trigger-upload" title="Upload file">&#128206;</button>
-                    <button class="context-action-btn" data-action="add-url" title="Add URL">+ URL</button>
-                </div>
+                <h3 class="context-section-title">Source Materials</h3>
             </div>
             <div class="uploads-list">
                 ${itemsHtml}
@@ -283,7 +309,7 @@ const Phase1 = (() => {
 
         let cardsHtml = '';
         if (audiences.length === 0) {
-            cardsHtml = '<div class="empty-state"><p>No target audiences defined yet.</p><p class="hint">Tell the AI about your learners, or upload a job description.</p></div>';
+            return; // Don't render empty section
         } else {
             cardsHtml = audiences.map(a => `
                 <div class="audience-card" data-id="${a.id}">
@@ -351,7 +377,7 @@ const Phase1 = (() => {
 
         let bizHtml = '';
         if (bizObj.length === 0) {
-            bizHtml = '<div class="empty-state"><p>No business objectives yet.</p></div>';
+            bizHtml = '';
         } else {
             bizHtml = '<ul class="objective-list">' +
                 bizObj.map((obj, i) => `
@@ -365,7 +391,7 @@ const Phase1 = (() => {
 
         let learnHtml = '';
         if (learnObj.length === 0) {
-            learnHtml = '<div class="empty-state"><p>No learning objectives yet.</p></div>';
+            learnHtml = '';
         } else {
             learnHtml = '<ul class="objective-list">' +
                 learnObj.map((obj, i) => `
@@ -599,7 +625,7 @@ const Phase1 = (() => {
 
         let tagsHtml = '';
         if (competencies.length === 0) {
-            tagsHtml = '<div class="empty-state"><p>No competencies extracted yet.</p><p class="hint">Upload a JTA or describe your learners\' tasks to extract competencies.</p></div>';
+            return; // Don't render empty section
         } else {
             tagsHtml = '<div class="competency-cloud">' +
                 competencies.map(c => `
