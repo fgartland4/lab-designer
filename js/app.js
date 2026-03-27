@@ -105,14 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateProgramNameDisplay() {
-        const nameInput = $('#program-name-input');
-        if (nameInput && currentProject) {
-            nameInput.value = currentProject.name;
-            // Show the name input once a project is active
-            if (currentProject.name && currentProject.name !== 'Untitled Program') {
-                nameInput.style.display = '';
-            }
-        }
+        // Program name is handled conversationally — no sidebar field
     }
 
     function bindProgramName() {
@@ -143,11 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentProject) return;
         currentProject.name = name;
         Store.updateProject(currentProject);
-        const nameInput = $('#program-name-input');
-        if (nameInput) {
-            nameInput.value = name;
-            nameInput.style.display = '';
-        }
     }
 
     // Expose for Phase1 to call
