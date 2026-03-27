@@ -3194,6 +3194,20 @@ body {
     display: flex;
     gap: 20px;
     margin-bottom: 14px;
+    align-items: flex-start;
+}
+
+/* 4-cell grid: 2 cols x auto rows, forces row alignment across columns */
+.settings-grid-4cell {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+/* Test Connection button matched to input height */
+.btn-match-input {
+    height: 37px;
 }
 
 /* Narrow select dropdowns for Lab Defaults */
