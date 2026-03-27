@@ -172,11 +172,11 @@ const Phase1 = (() => {
         // Define all checklist items
         const sections = [
             {
-                key: 'platform',
-                label: 'Technology / Platform',
-                filled: !!platform,
-                summary: platform || 'Not specified',
-                detail: platform ? `<div class="bp-badge">${escHtml(platform)}</div>` : null,
+                key: 'objectives',
+                label: 'Business / Learning Objectives',
+                filled: bizObj.length > 0 || learnObj.length > 0,
+                summary: _objectivesSummary(bizObj, learnObj),
+                detail: (bizObj.length > 0 || learnObj.length > 0) ? _renderObjectivesDetail(bizObj, learnObj, project.id) : null,
             },
             {
                 key: 'audiences',
@@ -186,11 +186,11 @@ const Phase1 = (() => {
                 detail: audiences.length > 0 ? _renderAudienceDetail(audiences) : null,
             },
             {
-                key: 'objectives',
-                label: 'Business / Learning Objectives',
-                filled: bizObj.length > 0 || learnObj.length > 0,
-                summary: _objectivesSummary(bizObj, learnObj),
-                detail: (bizObj.length > 0 || learnObj.length > 0) ? _renderObjectivesDetail(bizObj, learnObj, project.id) : null,
+                key: 'platform',
+                label: 'Primary Product / Platform',
+                filled: !!platform,
+                summary: platform || 'Not specified',
+                detail: platform ? `<div class="bp-badge">${escHtml(platform)}</div>` : null,
             },
             {
                 key: 'seat-time',
