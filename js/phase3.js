@@ -171,7 +171,6 @@ const Phase3 = (() => {
 
         const styleGuideLabels = {
             'microsoft': 'Microsoft Style Guide',
-            'google': 'Google Developer Docs',
             'apple': 'Apple Style Guide',
             'redhat': 'Red Hat Documentation Guide',
             'custom': 'Custom',
@@ -212,25 +211,20 @@ const Phase3 = (() => {
                 ${outlineHtml}
             </div>
 
-            <div id="phase3-tab-styling" class="phase3-tab-panel" style="display:none;">
-                <div class="phase3-style-picker">
+            <div id="phase3-tab-styling" class="phase3-tab-panel" style="display:none;padding:12px 16px;">
+                <div class="style-radio-group">
                     <label class="form-label">Instruction Style</label>
-                    <select id="phase3-instruction-style" class="form-select">
-                        <option value="challenge"${instructionStyle === 'challenge' ? ' selected' : ''}>Challenge-based</option>
-                        <option value="mixed"${instructionStyle === 'mixed' ? ' selected' : ''}>Mixed</option>
-                        <option value="performance-test"${instructionStyle === 'performance-test' ? ' selected' : ''}>Performance Test</option>
-                        <option value="step-by-step"${instructionStyle === 'step-by-step' ? ' selected' : ''}>Step-by-step</option>
-                    </select>
-                    <span class="form-hint">How should the AI draft instructions for activities?</span>
+                    ${_radioOption('instruction-style', 'challenge', 'Challenge-based', 'Present goals and context; include progressive hints that nudge without giving answers.', instructionStyle)}
+                    ${_radioOption('instruction-style', 'mixed', 'Mixed', 'AI picks the best style per activity — challenge for simple tasks, guided for complex ones.', instructionStyle)}
+                    ${_radioOption('instruction-style', 'performance-test', 'Performance Test', 'Task objective only, no hints or guidance. For high-stakes certification exams.', instructionStyle)}
+                    ${_radioOption('instruction-style', 'step-by-step', 'Step-by-step', 'Detailed walkthrough with every action spelled out. Best for beginners or complex UIs.', instructionStyle)}
                 </div>
-                <div class="phase3-style-picker" style="margin-top:12px;">
+                <div class="style-radio-group" style="margin-top:20px;">
                     <label class="form-label">Writing Style Guide</label>
-                    <select id="phase3-style-guide" class="form-select">
-                        ${Object.entries(styleGuideLabels).map(([val, label]) =>
-                            `<option value="${val}"${styleGuide === val ? ' selected' : ''}>${label}</option>`
-                        ).join('')}
-                    </select>
-                    <span class="form-hint">Tone, voice, and formatting conventions for drafted content.</span>
+                    ${_radioOption('style-guide', 'microsoft', 'Microsoft Style Guide', 'Warm, relaxed tone. Second person. Short sentences. Action-oriented.', styleGuide)}
+                    ${_radioOption('style-guide', 'apple', 'Apple Style Guide', 'Friendly, straightforward. Avoid technical terms when possible.', styleGuide)}
+                    ${_radioOption('style-guide', 'redhat', 'Red Hat Documentation Guide', 'Precise, consistent terminology. Modular, task-based structure.', styleGuide)}
+                    ${_radioOption('style-guide', 'custom', 'Custom', 'Use a custom style guide configured in Settings.', styleGuide)}
                 </div>
             </div>
         `;
@@ -238,6 +232,19 @@ const Phase3 = (() => {
         container.innerHTML = html;
         _bindPhase3Tabs(container);
         _bindStylePicker(container, project.id);
+    }
+
+    function _radioOption(groupName, value, label, description, currentValue) {
+        const checked = value === currentValue ? ' checked' : '';
+        return `
+            <label class="style-radio-card${checked ? ' selected' : ''}">
+                <input type="radio" name="phase3-${groupName}" value="${value}"${checked}>
+                <div class="style-radio-content">
+                    <strong>${label}</strong>
+                    <span class="style-radio-desc">${description}</span>
+                </div>
+            </label>
+        `;
     }
 
     function _bindPhase3Tabs(container) {
@@ -261,26 +268,33 @@ const Phase3 = (() => {
     }
 
     function _bindStylePicker(container, projectId) {
-        const select = $('#phase3-instruction-style', container);
-        if (select) {
-            select.addEventListener('change', () => {
+        // Instruction style radios
+        container.querySelectorAll('input[name="phase3-instruction-style"]').forEach(radio => {
+            radio.addEventListener('change', () => {
                 const project = Store.getProject(projectId);
                 if (project) {
-                    project.instructionStyle = select.value;
+                    project.instructionStyle = radio.value;
                     Store.updateProject(project);
                 }
+                // Update selected visual
+                container.querySelectorAll('input[name="phase3-instruction-style"]').forEach(r => {
+                    r.closest('.style-radio-card').classList.toggle('selected', r.checked);
+                });
             });
-        }
+        });
 
-        const guideSelect = $('#phase3-style-guide', container);
-        if (guideSelect) {
-            guideSelect.addEventListener('change', () => {
+        // Style guide radios
+        container.querySelectorAll('input[name="phase3-style-guide"]').forEach(radio => {
+            radio.addEventListener('change', () => {
                 if (typeof Settings !== 'undefined') {
-                    Settings.set('instructionStyleGuide', guideSelect.value);
+                    Settings.set('instructionStyleGuide', radio.value);
                     Settings.save();
                 }
+                container.querySelectorAll('input[name="phase3-style-guide"]').forEach(r => {
+                    r.closest('.style-radio-card').classList.toggle('selected', r.checked);
+                });
             });
-        }
+        });
     }
 
     function _renderLabCard(lab, project) {

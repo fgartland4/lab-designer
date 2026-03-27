@@ -1094,6 +1094,65 @@ body {
     margin-top: 4px;
 }
 
+/* Style radio cards */
+.style-radio-group {
+    margin-bottom: 8px;
+}
+
+.style-radio-group .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.style-radio-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: var(--color-surface);
+}
+
+.style-radio-card:hover {
+    border-color: var(--color-border);
+    background: var(--color-bg);
+}
+
+.style-radio-card.selected {
+    border-color: var(--color-primary);
+    background: rgba(0, 208, 130, 0.04);
+}
+
+.style-radio-card input[type="radio"] {
+    margin-top: 3px;
+    accent-color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.style-radio-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.style-radio-content strong {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.style-radio-desc {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+}
+
 .phase3-empty-state {
     text-align: center;
     padding: 40px 20px;
