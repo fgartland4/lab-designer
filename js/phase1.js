@@ -148,9 +148,11 @@ const Phase1 = (() => {
             App.refreshCurrentProject();
         }
 
-        // Clear the chat DOM and re-render welcome
-        if (window.App && App.renderChatHistory) {
-            App.renderChatHistory('phase1');
+        // Clear the chat DOM and show the welcome message
+        const chatContainer = $('#phase1-chat-messages');
+        if (chatContainer) chatContainer.innerHTML = '';
+        if (window.App && App.showWelcomeIfNeeded) {
+            App.showWelcomeIfNeeded();
         }
 
         // Re-render the Blueprint as empty state

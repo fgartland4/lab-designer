@@ -995,6 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.App = {
         getCurrentProjectId: () => currentProject ? currentProject.id : null,
         renderChatHistory,
+        showWelcomeIfNeeded,
         refreshCurrentProject: () => {
             currentProject = Store.getActiveProject();
             return currentProject;
