@@ -1095,6 +1095,11 @@ body {
 }
 
 /* Style radio cards */
+.phase3-tab-panel {
+    overflow-y: auto;
+    flex: 1;
+}
+
 .style-radio-group {
     margin-bottom: 8px;
 }
