@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── State ──
     let currentProject = null;
-    let currentSection = 'home';
+    let currentSection = 'phase1';
     let pendingFiles = []; // files waiting to be sent with next message (phase 1)
 
     // ── DOM helpers ──
@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         bindNavigation();
         bindProgramControls();
-        bindHome();
         bindChat('phase1');
         bindChat('phase2');
         bindChat('phase3');
@@ -47,8 +46,11 @@ document.addEventListener('DOMContentLoaded', () => {
         bindFileUpload();
         bindSettings();
 
-        // Start on home screen
-        showHomeScreen();
+        // Load active project or create first one
+        loadOrCreateProject();
+        renderAll();
+        renderChatHistory('phase1');
+        showWelcomeIfNeeded();
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -68,16 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function navigateTo(section) {
         currentSection = section;
 
-        if (section === 'home') {
-            showHomeScreen();
-            return;
-        }
-
         // Update nav active states
-        $$('#phase-nav .nav-link').forEach(l => l.classList.toggle('active', l.dataset.section === section));
-        // Also handle the settings link in sidebar-title-block
-        const settingsLink = $('.sidebar-title-block .settings-link');
-        if (settingsLink) settingsLink.classList.toggle('active', section === 'settings');
+        $$('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.section === section));
 
         // Show/hide sections
         $$('.phase-section').forEach(s => s.classList.toggle('active', s.id === `section-${section}`));
@@ -95,132 +89,138 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showHomeScreen() {
-        currentSection = 'home';
-        currentProject = null;
+    // ══════════════════════════════════════════════════════════════
+    //  Program Management (sidebar)
+    // ══════════════════════════════════════════════════════════════
 
-        // Hide program-specific sidebar elements
-        const sidebarProgram = $('#sidebar-program');
-        const phaseNav = $('#phase-nav');
-        if (sidebarProgram) sidebarProgram.style.display = 'none';
-        if (phaseNav) phaseNav.style.display = 'none';
-
-        // Clear nav active states
-        $$('#phase-nav .nav-link').forEach(l => l.classList.remove('active'));
-
-        // Show home section, hide all others
-        $$('.phase-section').forEach(s => s.classList.toggle('active', s.id === 'section-home'));
-
-        // Clear and focus the name input
-        const nameInput = $('#home-program-name');
-        if (nameInput) {
-            nameInput.value = '';
-            setTimeout(() => nameInput.focus(), 100);
+    function loadOrCreateProject() {
+        currentProject = Store.getActiveProject();
+        if (!currentProject) {
+            currentProject = Store.createProject('Untitled Program');
         }
-
-        // Render existing program cards
-        renderHomePrograms();
+        renderProgramSelector();
     }
 
-    function bindHome() {
-        const startBtn = $('#home-start-btn');
-        const nameInput = $('#home-program-name');
+    function loadProject(projectId) {
+        Store.setActiveProject(projectId);
+        currentProject = Store.getActiveProject();
+        if (!currentProject) return;
 
-        if (startBtn) {
-            startBtn.addEventListener('click', () => startNewProgram());
-        }
+        // Update name input
+        const nameInput = $('#program-name-input');
+        if (nameInput) nameInput.value = currentProject.name;
 
-        if (nameInput) {
-            nameInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    startNewProgram();
-                }
-            });
-        }
+        clearAllChats();
+        renderAll();
+        restoreAllChats();
+        renderProgramSelector();
+        showWelcomeIfNeeded();
     }
 
-    function startNewProgram() {
-        const nameInput = $('#home-program-name');
-        const name = nameInput ? nameInput.value.trim() : '';
-        if (!name) {
-            if (nameInput) nameInput.focus();
+    function renderProgramSelector() {
+        const nameInput = $('#program-name-input');
+        if (nameInput && currentProject) {
+            nameInput.value = currentProject.name;
+        }
+
+        const list = $('#program-list');
+        if (!list) return;
+
+        const projects = Store.listProjects();
+        if (projects.length <= 1) {
+            list.innerHTML = '';
             return;
         }
 
-        const project = Store.createProject(name);
-        openProgram(project.id);
-    }
+        list.innerHTML = projects.map(p => `
+            <div class="sidebar-program-item ${p.id === (currentProject && currentProject.id) ? 'active' : ''}" data-project-id="${p.id}">
+                <span class="program-item-name">${escHtml(p.name)}</span>
+                <button class="program-item-delete" data-delete-id="${p.id}" title="Delete">&times;</button>
+            </div>
+        `).join('');
 
-    function renderHomePrograms() {
-        const grid = $('#home-programs-grid');
-        const existingSection = $('#home-existing-section');
-        if (!grid) return;
-
-        const projects = Store.listProjects();
-
-        // Show/hide existing programs section
-        if (existingSection) {
-            existingSection.style.display = projects.length > 0 ? 'block' : 'none';
-        }
-
-        const cards = projects.map(p => {
-            const updated = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : 'Unknown';
-            const labCount = (p.labBlueprints || []).length;
-            const meta = labCount > 0 ? `${labCount} lab${labCount !== 1 ? 's' : ''} &middot; Updated ${updated}` : `Updated ${updated}`;
-            return `
-                <div class="home-program-card" data-project-id="${p.id}">
-                    <button class="program-delete" data-delete-id="${p.id}" title="Delete program">&times;</button>
-                    <h3>${escHtml(p.name)}</h3>
-                    <div class="program-meta">${meta}</div>
-                </div>`;
-        }).join('');
-
-        grid.innerHTML = cards;
-
-        // Bind card clicks
-        grid.querySelectorAll('.home-program-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                if (e.target.closest('.program-delete')) return;
-                openProgram(card.dataset.projectId);
+        // Bind clicks
+        list.querySelectorAll('.sidebar-program-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('.program-item-delete')) return;
+                loadProject(item.dataset.projectId);
             });
         });
 
-        // Bind delete buttons
-        grid.querySelectorAll('.program-delete').forEach(btn => {
+        // Bind delete
+        list.querySelectorAll('.program-item-delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const id = btn.dataset.deleteId;
                 const project = Store.getProject(id);
                 if (!project) return;
-                if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return;
+                if (!confirm(`Delete "${project.name}"?`)) return;
                 Store.deleteProject(id);
-                renderHomePrograms();
+
+                // If we deleted the active project, switch to another
+                if (currentProject && currentProject.id === id) {
+                    currentProject = Store.getActiveProject();
+                    if (!currentProject) {
+                        currentProject = Store.createProject('Untitled Program');
+                    }
+                    clearAllChats();
+                    renderAll();
+                    restoreAllChats();
+                    showWelcomeIfNeeded();
+                }
+                renderProgramSelector();
             });
         });
     }
 
-    function openProgram(projectId) {
-        Store.setActiveProject(projectId);
-        currentProject = Store.getActiveProject();
-        if (!currentProject) return;
-
-        // Show program-specific sidebar elements
-        const sidebarProgram = $('#sidebar-program');
-        const phaseNav = $('#phase-nav');
-        if (sidebarProgram) sidebarProgram.style.display = 'block';
-        if (phaseNav) phaseNav.style.display = 'block';
-
-        // Set program name
+    function bindProgramControls() {
+        // Program name editing
         const nameInput = $('#program-name-input');
-        if (nameInput) nameInput.value = currentProject.name;
+        if (nameInput) {
+            const saveName = () => {
+                if (!currentProject) return;
+                const newName = nameInput.value.trim() || 'Untitled Program';
+                nameInput.value = newName;
+                currentProject.name = newName;
+                Store.updateProject(currentProject);
+                renderProgramSelector();
+            };
+            nameInput.addEventListener('blur', saveName);
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    nameInput.blur();
+                }
+            });
+        }
 
-        // Render everything and go to phase 1
-        clearAllChats();
-        renderAll();
-        restoreAllChats();
-        navigateTo('phase1');
-        showWelcomeIfNeeded();
+        // New program button
+        const newBtn = $('#btn-new-program');
+        if (newBtn) {
+            newBtn.addEventListener('click', () => {
+                currentProject = Store.createProject('Untitled Program');
+                loadProject(currentProject.id);
+                // Focus the name input so they can immediately type a name
+                const ni = $('#program-name-input');
+                if (ni) { ni.select(); ni.focus(); }
+            });
+        }
+
+        // Sidebar export/import
+        const exportBtn = $('#btn-export');
+        const importBtn = $('#btn-import');
+        const importFile = $('#import-file');
+
+        if (exportBtn) exportBtn.addEventListener('click', () => exportProject());
+        if (importBtn) importBtn.addEventListener('click', () => importFile && importFile.click());
+        if (importFile) {
+            importFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                importProjectFromFile(file);
+                e.target.value = '';
+            });
+        }
     }
 
     // ══════════════════════════════════════════════════════════════

@@ -30,16 +30,18 @@
                 <hr class="sidebar-hairline">
             </div>
 
-            <!-- Active program name (shown when inside a program) -->
-            <div class="sidebar-program" id="sidebar-program" style="display:none;">
-                <a href="#" id="btn-back-to-programs" class="sidebar-back-link">&larr; All Programs</a>
-                <div class="sidebar-program-name-row">
-                    <input type="text" id="program-name-input" class="program-name-input" value="" placeholder="Untitled Program" title="Click to rename">
+            <!-- Program selector -->
+            <div class="sidebar-program">
+                <label class="sidebar-program-label">Program</label>
+                <input type="text" id="program-name-input" class="program-name-input" value="" placeholder="Name your program..." title="Click to rename">
+                <div class="sidebar-program-list" id="program-list">
+                    <!-- Populated by JS -->
                 </div>
+                <button class="btn btn-sm btn-ghost sidebar-new-program" id="btn-new-program">+ New Program</button>
             </div>
 
-            <!-- Phase navigation (hidden until a program is selected) -->
-            <nav id="phase-nav" style="display:none;">
+            <!-- Phase navigation -->
+            <nav id="phase-nav">
                 <ul id="nav-list">
                     <li>
                         <a href="#" data-section="phase1" class="nav-link active">
@@ -94,30 +96,8 @@
         <!-- Main Content Area -->
         <main id="main-content">
 
-            <!-- ==================== HOME: Program Selection ==================== -->
-            <section id="section-home" class="phase-section active">
-                <div class="home-screen">
-                    <div class="home-welcome">
-                        <h2>What program are you working on?</h2>
-                        <p class="home-subtitle">Name your program to get started.</p>
-                        <div class="home-new-program">
-                            <input type="text" id="home-program-name" class="home-program-input" placeholder="e.g., Azure Security Fundamentals" autofocus>
-                            <button class="btn btn-primary" id="home-start-btn">Get Started</button>
-                        </div>
-                    </div>
-
-                    <!-- Existing programs shown below if any exist -->
-                    <div class="home-existing" id="home-existing-section" style="display:none;">
-                        <div class="home-divider">
-                            <span>or continue an existing program</span>
-                        </div>
-                        <div class="home-programs" id="home-programs-grid"></div>
-                    </div>
-                </div>
-            </section>
-
             <!-- ==================== PHASE 1: Audiences & Objectives ==================== -->
-            <section id="section-phase1" class="phase-section">
+            <section id="section-phase1" class="phase-section active">
                 <div class="phase-layout">
                     <!-- Chat Panel (left, 60%) -->
                     <div class="chat-panel">

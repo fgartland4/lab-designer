@@ -171,181 +171,94 @@ body {
     margin: 10px 0 0;
 }
 
-/* Program name in sidebar */
+/* Program selector in sidebar */
 .sidebar-program {
     padding: 8px 16px 12px;
 }
 
-.sidebar-back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    margin-bottom: 8px;
-    transition: color var(--transition);
-}
-
-.sidebar-back-link:hover {
-    color: var(--color-primary);
-}
-
-.sidebar-program-name-row {
-    display: flex;
-    align-items: center;
+.sidebar-program-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-text-muted, #999);
+    margin-bottom: 6px;
+    display: block;
 }
 
 .program-name-input {
     width: 100%;
-    background: transparent;
-    border: 1px solid transparent;
+    background: #fff;
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    padding: 6px 8px;
-    font-size: 14px;
+    padding: 7px 10px;
+    font-size: 13px;
     font-weight: 600;
     font-family: inherit;
     color: var(--color-text);
     cursor: text;
     transition: all var(--transition);
+    margin-bottom: 6px;
 }
 
 .program-name-input:hover {
-    border-color: var(--color-border);
-    background: rgba(0, 0, 0, 0.02);
+    border-color: var(--color-border-dark, #bbb);
 }
 
 .program-name-input:focus {
     border-color: var(--color-primary);
-    background: #fff;
     outline: none;
     box-shadow: 0 0 0 2px rgba(0, 208, 130, 0.15);
 }
 
-/* Home screen */
-.home-screen {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 80px 32px 48px;
-}
-
-.home-welcome {
-    text-align: center;
-    margin-bottom: 40px;
-}
-
-.home-welcome h2 {
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--color-text);
-    margin-bottom: 8px;
-}
-
-.home-subtitle {
-    font-size: 15px;
-    color: var(--color-text-secondary);
-    margin-bottom: 24px;
-}
-
-.home-new-program {
-    display: flex;
-    gap: 10px;
-    max-width: 480px;
-    margin: 0 auto;
-}
-
-.home-program-input {
-    flex: 1;
-    padding: 12px 16px;
-    font-size: 15px;
-    font-family: inherit;
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    color: var(--color-text);
-    background: #fff;
-    transition: border-color var(--transition);
-}
-
-.home-program-input:focus {
-    border-color: var(--color-primary);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 208, 130, 0.12);
-}
-
-.home-program-input::placeholder {
+.program-name-input::placeholder {
+    font-weight: 400;
     color: var(--color-text-muted, #999);
 }
 
-/* Existing programs divider */
-.home-existing {
-    margin-top: 8px;
+.sidebar-program-list {
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 4px;
 }
 
-.home-divider {
+.sidebar-program-item {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 24px;
-    color: var(--color-text-muted, #999);
-    font-size: 13px;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    transition: all var(--transition);
 }
 
-.home-divider::before,
-.home-divider::after {
-    content: '';
+.sidebar-program-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--color-text);
+}
+
+.sidebar-program-item.active {
+    background: rgba(0, 208, 130, 0.08);
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+.sidebar-program-item .program-item-name {
     flex: 1;
-    height: 1px;
-    background: var(--color-border);
-}
-
-.home-divider span {
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.home-programs {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
-}
-
-.home-program-card {
-    background: #fff;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md, 8px);
-    padding: 20px;
-    cursor: pointer;
-    transition: all var(--transition);
-    position: relative;
-}
-
-.home-program-card:hover {
-    border-color: var(--color-primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
-}
-
-.home-program-card h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: 6px;
-}
-
-.home-program-card .program-meta {
-    font-size: 12px;
-    color: var(--color-text-muted, #999);
-}
-
-.home-program-card .program-delete {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 24px;
-    height: 24px;
+.sidebar-program-item .program-item-delete {
+    width: 18px;
+    height: 18px;
     border: none;
     background: transparent;
     color: var(--color-text-muted, #999);
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     border-radius: 50%;
     display: flex;
@@ -353,48 +266,26 @@ body {
     justify-content: center;
     opacity: 0;
     transition: all var(--transition);
+    flex-shrink: 0;
 }
 
-.home-program-card:hover .program-delete {
+.sidebar-program-item:hover .program-item-delete {
     opacity: 1;
 }
 
-.home-program-card .program-delete:hover {
+.sidebar-program-item .program-item-delete:hover {
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
 }
 
-.home-new-card {
-    background: transparent;
-    border: 2px dashed var(--color-border);
-    border-radius: var(--radius-md, 8px);
-    padding: 20px;
-    cursor: pointer;
-    transition: all var(--transition);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100px;
+.sidebar-new-program {
+    width: 100%;
+    text-align: left;
+    font-size: 12px;
     color: var(--color-text-secondary);
+    padding: 4px 8px;
 }
 
-.home-new-card:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    background: rgba(0, 208, 130, 0.03);
-}
-
-.home-new-card .new-card-icon {
-    font-size: 32px;
-    margin-bottom: 8px;
-    font-weight: 300;
-}
-
-.home-new-card .new-card-text {
-    font-size: 14px;
-    font-weight: 500;
-}
 
 /* Navigation */
 #nav-list {
