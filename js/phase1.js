@@ -207,13 +207,6 @@ const Phase1 = (() => {
                 detail: criteria.length > 0 ? _renderListDetail(criteria) : null,
             },
             {
-                key: 'docs',
-                label: 'Documentation & References',
-                filled: docRefs.length > 0,
-                summary: docRefs.length > 0 ? `${docRefs.length} linked` : 'None yet',
-                detail: docRefs.length > 0 ? _renderDocsDetail(docRefs) : null,
-            },
-            {
                 key: 'scenarios',
                 label: 'Scenario Seeds',
                 filled: seeds.length > 0,
