@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         bindNavigation();
         bindProgramControls();
+        bindHome();
         bindChat('phase1');
         bindChat('phase2');
         bindChat('phase3');
@@ -110,15 +111,58 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show home section, hide all others
         $$('.phase-section').forEach(s => s.classList.toggle('active', s.id === 'section-home'));
 
-        // Render program cards
-        renderHomeScreen();
+        // Clear and focus the name input
+        const nameInput = $('#home-program-name');
+        if (nameInput) {
+            nameInput.value = '';
+            setTimeout(() => nameInput.focus(), 100);
+        }
+
+        // Render existing program cards
+        renderHomePrograms();
     }
 
-    function renderHomeScreen() {
+    function bindHome() {
+        const startBtn = $('#home-start-btn');
+        const nameInput = $('#home-program-name');
+
+        if (startBtn) {
+            startBtn.addEventListener('click', () => startNewProgram());
+        }
+
+        if (nameInput) {
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    startNewProgram();
+                }
+            });
+        }
+    }
+
+    function startNewProgram() {
+        const nameInput = $('#home-program-name');
+        const name = nameInput ? nameInput.value.trim() : '';
+        if (!name) {
+            if (nameInput) nameInput.focus();
+            return;
+        }
+
+        const project = Store.createProject(name);
+        openProgram(project.id);
+    }
+
+    function renderHomePrograms() {
         const grid = $('#home-programs-grid');
+        const existingSection = $('#home-existing-section');
         if (!grid) return;
 
         const projects = Store.listProjects();
+
+        // Show/hide existing programs section
+        if (existingSection) {
+            existingSection.style.display = projects.length > 0 ? 'block' : 'none';
+        }
 
         const cards = projects.map(p => {
             const updated = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : 'Unknown';
@@ -132,18 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
         }).join('');
 
-        const newCard = `
-            <div class="home-new-card" id="home-new-program">
-                <div class="new-card-icon">+</div>
-                <div class="new-card-text">Start New Program</div>
-            </div>`;
-
-        grid.innerHTML = cards + newCard;
+        grid.innerHTML = cards;
 
         // Bind card clicks
         grid.querySelectorAll('.home-program-card').forEach(card => {
             card.addEventListener('click', (e) => {
-                // Don't open if delete button was clicked
                 if (e.target.closest('.program-delete')) return;
                 openProgram(card.dataset.projectId);
             });
@@ -158,18 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!project) return;
                 if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return;
                 Store.deleteProject(id);
-                renderHomeScreen();
+                renderHomePrograms();
             });
         });
-
-        // Bind new program card
-        const newBtn = $('#home-new-program');
-        if (newBtn) {
-            newBtn.addEventListener('click', () => {
-                const project = Store.createProject('Untitled Program');
-                openProgram(project.id);
-            });
-        }
     }
 
     function openProgram(projectId) {

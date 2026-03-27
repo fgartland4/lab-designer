@@ -224,17 +224,18 @@ body {
 
 /* Home screen */
 .home-screen {
-    max-width: 900px;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 48px 32px;
+    padding: 80px 32px 48px;
 }
 
-.home-header {
-    margin-bottom: 32px;
+.home-welcome {
+    text-align: center;
+    margin-bottom: 40px;
 }
 
-.home-header h2 {
-    font-size: 28px;
+.home-welcome h2 {
+    font-size: 26px;
     font-weight: 700;
     color: var(--color-text);
     margin-bottom: 8px;
@@ -243,6 +244,62 @@ body {
 .home-subtitle {
     font-size: 15px;
     color: var(--color-text-secondary);
+    margin-bottom: 24px;
+}
+
+.home-new-program {
+    display: flex;
+    gap: 10px;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.home-program-input {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text);
+    background: #fff;
+    transition: border-color var(--transition);
+}
+
+.home-program-input:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 208, 130, 0.12);
+}
+
+.home-program-input::placeholder {
+    color: var(--color-text-muted, #999);
+}
+
+/* Existing programs divider */
+.home-existing {
+    margin-top: 8px;
+}
+
+.home-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    color: var(--color-text-muted, #999);
+    font-size: 13px;
+}
+
+.home-divider::before,
+.home-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+}
+
+.home-divider span {
+    white-space: nowrap;
 }
 
 .home-programs {
