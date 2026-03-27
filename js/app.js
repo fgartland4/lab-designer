@@ -568,8 +568,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         $('#settings-ai-provider').value = s.aiProvider || 'claude';
         $('#settings-api-key').value = s.apiKey || '';
-        filterModelsByProvider(s.aiProvider || 'claude');
-        $('#settings-model').value = s.model || '';
+        const provider = s.aiProvider || 'claude';
+        filterModelsByProvider(provider);
+        const modelSelect = $('#settings-model');
+        if (s.model) modelSelect.value = s.model;
+        if (!modelSelect.value) {
+            const firstOpt = $(`#settings-model optgroup[data-provider="${provider}"] option`);
+            if (firstOpt) modelSelect.value = firstOpt.value;
+        }
         $('#settings-endpoint').value = s.customEndpoint || '';
         $('#settings-default-seat-time').value = s.defaultSeatTime || 45;
         const apl = s.activitiesPerLab;
