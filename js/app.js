@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 renderChatMessage('phase3', 'assistant',
                     `Your lab outline is ready. Let's start drafting instructions for each activity.\n\n` +
-                    `Pick an instruction style above, then say **"start drafting"** and I'll begin writing step-by-step instructions for your first lab.`
+                    `The instruction style defaults to **challenge-based** — you can change it in the panel above. Say **"start drafting"** and I'll begin writing instructions for your first lab.`
                 );
             }
         }

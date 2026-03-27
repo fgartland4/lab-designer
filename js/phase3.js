@@ -166,7 +166,7 @@ const Phase3 = (() => {
         if (!container || !project) return;
 
         const programName = (project.name && project.name !== 'Untitled Program') ? project.name : '';
-        const instructionStyle = project.instructionStyle || '';
+        const instructionStyle = project.instructionStyle || 'challenge';
 
         // Blueprint header + instruction style picker
         let html = `
@@ -177,9 +177,8 @@ const Phase3 = (() => {
             <div class="phase3-style-picker">
                 <label class="form-label">Instruction Style</label>
                 <select id="phase3-instruction-style" class="form-select">
-                    <option value=""${!instructionStyle ? ' selected' : ''}>Not yet decided</option>
-                    <option value="step-by-step"${instructionStyle === 'step-by-step' ? ' selected' : ''}>Step-by-step</option>
                     <option value="challenge"${instructionStyle === 'challenge' ? ' selected' : ''}>Challenge-based</option>
+                    <option value="step-by-step"${instructionStyle === 'step-by-step' ? ' selected' : ''}>Step-by-step</option>
                     <option value="mixed"${instructionStyle === 'mixed' ? ' selected' : ''}>Mixed</option>
                 </select>
                 <span class="form-hint">How should the AI draft instructions for activities?</span>
