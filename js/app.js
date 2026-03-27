@@ -869,32 +869,6 @@ document.addEventListener('DOMContentLoaded', () => {
         customOpt.textContent = `Custom: ${label}`;
     }
 
-    function _noOp_renderReferences(refs) {
-        // Legacy — references now use inline URL fields + file dropzone
-        return;
-    }
-
-    function renderReferences(refs) {
-        const container = $('#settings-references-list');
-        if (!container) return;
-        if (!refs || refs.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>No default references added.</p></div>';
-            return;
-        }
-        container.innerHTML = refs.map(ref => `
-            <div class="reference-item" data-id="${ref.id}">
-                <span class="reference-icon">${ref.type === 'url' ? '&#128279;' : '&#128196;'}</span>
-                <span class="reference-title">${escHtml(ref.title || ref.url || ref.name || 'Untitled')}</span>
-                <button class="reference-remove" data-ref-id="${ref.id}" title="Remove">&times;</button>
-            </div>
-        `).join('');
-        container.querySelectorAll('.reference-remove').forEach(btn => {
-            btn.addEventListener('click', () => {
-                Settings.removeDefaultReference(btn.dataset.refId);
-                renderReferences(Settings.get('defaultReferences') || []);
-            });
-        });
-    }
 
     // ══════════════════════════════════════════════════════════════
     //  Import / Export
