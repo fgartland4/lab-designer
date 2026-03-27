@@ -832,7 +832,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const onMouseMove = (ev) => {
                     const offsetX = ev.clientX - layoutRect.left;
                     const totalWidth = layoutRect.width - resizerWidth;
-                    const minChat = 300;
+                    // Context panel can take at most 50% of available space
+                    const minChat = totalWidth * 0.5;
                     const minContext = 280;
 
                     let chatWidth = Math.max(minChat, Math.min(offsetX, totalWidth - minContext));
