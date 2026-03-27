@@ -173,6 +173,8 @@ const Phase3 = (() => {
             'microsoft': 'Microsoft Style Guide',
             'apple': 'Apple Style Guide',
             'redhat': 'Red Hat Documentation Guide',
+            'digitalocean': 'DigitalOcean Technical Writing Guidelines',
+            'ibm': 'IBM Style Guide',
             'custom': 'Custom',
         };
 
@@ -224,6 +226,8 @@ const Phase3 = (() => {
                     ${_radioOption('style-guide', 'microsoft', 'Microsoft Style Guide', 'Warm, relaxed tone. Second person. Short sentences. Action-oriented.', styleGuide)}
                     ${_radioOption('style-guide', 'apple', 'Apple Style Guide', 'Friendly, straightforward. Avoid technical terms when possible.', styleGuide)}
                     ${_radioOption('style-guide', 'redhat', 'Red Hat Documentation Guide', 'Precise, consistent terminology. Modular, task-based structure.', styleGuide)}
+                    ${_radioOption('style-guide', 'digitalocean', 'DigitalOcean Technical Writing Guidelines', 'Tutorial-focused. Clear structure, practical examples, action-oriented steps.', styleGuide)}
+                    ${_radioOption('style-guide', 'ibm', 'IBM Style Guide', 'Enterprise-grade clarity. Consistent terminology, structured for technical depth.', styleGuide)}
                     ${_radioOption('style-guide', 'custom', 'Custom', 'Use a custom style guide configured in Settings.', styleGuide)}
                 </div>
             </div>
