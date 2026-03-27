@@ -225,7 +225,7 @@ const Phase1 = (() => {
         for (const sec of sections) {
             const isExpanded = _expandedSections.has(sec.key);
             const hasDetail = !!sec.detail;
-            const statusIcon = sec.filled ? '\u25CF' : '\u25CB';
+            const statusIcon = `<span class="bp-circle ${sec.filled ? 'filled' : ''}"></span>`;
             const chevron = hasDetail ? `<span class="bp-chevron ${isExpanded ? 'open' : ''}">\u25B6</span>` : '';
 
             const row = document.createElement('div');
