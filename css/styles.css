@@ -848,6 +848,11 @@ body {
     flex-shrink: 0;
     width: 20px;
     text-align: center;
+    color: var(--color-text-light);
+}
+
+.bp-item.filled .bp-status {
+    color: var(--color-primary);
 }
 
 .bp-label {
