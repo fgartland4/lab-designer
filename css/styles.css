@@ -415,18 +415,31 @@ body {
 .sidebar-settings-btn {
     display: inline-flex;
     align-items: center;
-    padding: 4px;
-    gap: 0;
+    padding: 4px 6px;
+    gap: 6px;
+    margin-bottom: 8px;
 }
 
 .sidebar-settings-icon {
-    font-size: 22px;
+    font-size: 20px;
     color: var(--color-sidebar-text-muted);
     transition: color var(--transition);
     line-height: 1;
 }
 
-.sidebar-settings-btn:hover .sidebar-settings-icon {
+.sidebar-settings-label {
+    font-size: 13px;
+    color: var(--color-sidebar-text-muted);
+    transition: color var(--transition);
+}
+
+.sidebar-settings-btn:hover .sidebar-settings-icon,
+.sidebar-settings-btn:hover .sidebar-settings-label {
+    color: #fff;
+}
+
+.sidebar-settings-btn.active .sidebar-settings-icon,
+.sidebar-settings-btn.active .sidebar-settings-label {
     color: #fff;
 }
 
