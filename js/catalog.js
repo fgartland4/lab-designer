@@ -1634,6 +1634,124 @@ const Catalog = (() => {
         return adjusted;
     }
 
+    /**
+     * Returns a condensed text summary of the catalog suitable for injection
+     * into AI system prompts. Kept under ~2000 tokens.
+     */
+    function toPromptContext() {
+        const lines = [];
+
+        // Skill domains
+        lines.push('=== SKILL DOMAINS ===');
+        domains.forEach(d => {
+            lines.push(`${d.name}: ${d.skills.map(s => s.name).join(', ')}`);
+        });
+
+        // Lab template types
+        lines.push('');
+        lines.push('=== LAB TEMPLATE TYPES ===');
+        Object.keys(labTemplates).forEach(skillName => {
+            const tpls = labTemplates[skillName];
+            tpls.forEach(t => {
+                lines.push(`- ${t.title} (${t.difficulty}, ${t.duration}min): ${t.description}`);
+            });
+        });
+
+        // Environment presets
+        lines.push('');
+        lines.push('=== ENVIRONMENT PRESETS ===');
+        Object.keys(envPresets).forEach(key => {
+            const p = envPresets[key];
+            const vmDesc = p.baseVMs.length > 0
+                ? `Base VMs: ${p.baseVMs.map(v => `${v.name} (${v.os})`).join(', ')}`
+                : 'No base VMs';
+            lines.push(`${platformDisplayName(key)}: ${vmDesc}. Credentials: ${p.credentials.split('\n')[0]}...`);
+        });
+
+        // Scoring methods
+        lines.push('');
+        lines.push('=== SCORING METHODS ===');
+        Object.keys(scoringMethods).forEach(id => {
+            const m = scoringMethods[id];
+            lines.push(`- ${m.name}: ${m.description}`);
+        });
+
+        return lines.join('\n');
+    }
+
+    /**
+     * Returns a structured text description of environment requirements
+     * (VMs, cloud resources, credentials) based on platform and selected skills.
+     * Intended for injection into Phase 4 AI prompts.
+     */
+    function generateBOMContext(platform, skills) {
+        const preset = getEnvironmentPreset(platform);
+        const lines = [];
+
+        lines.push(`Platform: ${platformDisplayName(platform)}`);
+        lines.push(`Credentials: ${preset.credentials}`);
+        lines.push('');
+
+        // Collect all VMs and cloud resources from matching templates
+        const vmMap = new Map();
+        const resourceMap = new Map();
+
+        // Include base VMs from preset
+        (preset.baseVMs || []).forEach(vm => {
+            vmMap.set(vm.name, vm);
+        });
+
+        (skills || []).forEach(skillName => {
+            const templates = getLabTemplatesForSkill(skillName);
+            templates.forEach(tpl => {
+                (tpl.envVMs || []).forEach(vm => {
+                    if (!vmMap.has(vm.name)) vmMap.set(vm.name, vm);
+                });
+                (tpl.envResources || []).forEach(res => {
+                    const key = `${res.type}::${res.name}`;
+                    if (!resourceMap.has(key)) resourceMap.set(key, res);
+                });
+            });
+        });
+
+        // VMs
+        const vms = Array.from(vmMap.values());
+        lines.push(`=== VIRTUAL MACHINES (${vms.length}) ===`);
+        if (vms.length === 0) {
+            lines.push('No VMs required.');
+        } else {
+            vms.forEach(vm => {
+                lines.push(`- ${vm.name}: OS=${vm.os}`);
+            });
+        }
+
+        // Cloud resources
+        const resources = Array.from(resourceMap.values());
+        lines.push('');
+        lines.push(`=== CLOUD RESOURCES (${resources.length}) ===`);
+        if (resources.length === 0) {
+            lines.push('No additional cloud resources required.');
+        } else {
+            resources.forEach(res => {
+                lines.push(`- ${res.type}: ${res.name}`);
+            });
+        }
+
+        // Environment notes from templates
+        lines.push('');
+        lines.push('=== ENVIRONMENT NOTES ===');
+        (skills || []).forEach(skillName => {
+            const templates = getLabTemplatesForSkill(skillName);
+            templates.forEach(tpl => {
+                if (tpl.envNotes) {
+                    lines.push(`[${skillName}] ${tpl.envNotes}`);
+                }
+            });
+        });
+
+        return lines.join('\n');
+    }
+
     return {
         getDomains,
         analyzeProgram,
@@ -1644,5 +1762,9 @@ const Catalog = (() => {
         getScoringMethods,
         getScoringMethod,
         detectPlatform,
+        toPromptContext,
+        getEnvironmentPreset,
+        getLabTemplatesForSkill,
+        generateBOMContext,
     };
 })();
